@@ -1,0 +1,11 @@
+# Arquivos locais do Terraform
+**/.terraform/
+**/.terraform.lock.hcl
+
+# Arquivos de estado NUNCA devem ir para o Git
+*.tfstate
+*.tfstate.*
+
+# Arquivos de plano podem conter dados sensíveis
+*.tfplan
+*.out
