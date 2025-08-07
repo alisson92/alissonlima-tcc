@@ -1,19 +1,16 @@
 name: 'Terraform TCC Pipeline'
 
 on:
-  # Permite que você rode o pipeline manualmente pela aba "Actions" do GitHub
   workflow_dispatch:
-    # --- NOVO BLOCO ---
-    # Cria um campo de entrada na interface do GitHub Actions
     inputs:
       action:
         description: 'Ação a ser executada: apply ou destroy'
         required: true
-        default: 'apply' # A ação padrão será 'apply'
+        default: 'apply'
         type: choice
         options:
-        - apply
-        - destroy
+          - apply
+          - destroy
 
 jobs:
   terraform:
@@ -37,26 +34,21 @@ jobs:
 
       - name: 'Setup Terraform'
         uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.12.2
 
       - name: 'Terraform Init'
         run: terraform init
 
-      - name: 'Terraform Plan'
-        id: plan
-        # Roda o plan normalmente para ambas as ações
-        # Para destroy, o -destroy flag é adicionado no passo específico
-        run: terraform plan -out=plan.out
-        
-      # --- PASSO DE APPLY AGORA É CONDICIONAL ---
-      - name: 'Terraform Apply'
-        # Só executa se a ação for 'apply' (ou se nenhuma ação for escolhida)
-        if: github.event.inputs.action == 'apply'
-        run: terraform apply -auto-approve plan.out
+      # --- MUDANÇA CRÍTICA AQUI ---
+      # Agora temos dois passos de 'plan' condicionais
 
-      # --- NOVO PASSO DE DESTROY ---
-      - name: 'Terraform Destroy'
-        # Só executa se a ação escolhida for 'destroy'
+      - name: 'Terraform Plan (para Apply)'
+        if: github.event.inputs.action == 'apply'
+        run: terraform plan -out=plan.out
+
+      - name: 'Terraform Plan (para Destroy)'
         if: github.event.inputs.action == 'destroy'
-        run: terraform apply -destroy -auto-approve plan.out
+        run: terraform plan -destroy -out=plan.out # <-- A flag -destroy está no lugar certo agora
+
+      # Este passo agora executa o plano que foi gerado, seja ele de construção ou destruição
+      - name: 'Terraform Apply'
+        run: terraform apply -auto-approve plan.out
