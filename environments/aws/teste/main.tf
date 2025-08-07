@@ -16,7 +16,7 @@ module "security" {
   vpc_id      = module.networking.vpc_id 
   environment = "teste"
   # --- CORREÇÃO APLICADA ABAIXO ---
-  my_ip       = "REDACTED_IP/32" 
+  my_ip       = "REDACTED_IP" 
 }
 
 module "app_environment_teste" {
