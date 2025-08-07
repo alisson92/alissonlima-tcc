@@ -1,0 +1,46 @@
+name: 'Terraform TCC Pipeline'
+
+on:
+  # Permite que você rode o pipeline manualmente pela aba "Actions" do GitHub
+  workflow_dispatch:
+
+jobs:
+  terraform:
+    name: 'Terraform Apply'
+    runs-on: ubuntu-latest # O pipeline vai rodar em um ambiente Linux limpo do GitHub
+
+    # Define o diretório de trabalho padrão para o ambiente de teste
+    defaults:
+      run:
+        working-directory: ./environments/aws/teste
+
+    steps:
+      # 1. Baixa o seu código do repositório para a máquina do pipeline
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+
+      # 2. Configura as credenciais da AWS usando os Secrets que criamos
+      - name: 'Configure AWS Credentials'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
+          aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          aws-region: us-east-1 # A região que estamos usando
+
+      # 3. Instala o Terraform na máquina do pipeline
+      - name: 'Setup Terraform'
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.12.2 # Podemos fixar a versão do Terraform aqui
+
+      # 4. Roda o terraform init
+      - name: 'Terraform Init'
+        run: terraform init
+
+      # 5. Roda o terraform plan
+      - name: 'Terraform Plan'
+        run: terraform plan -out=plan.out
+
+      # 6. Roda o terraform apply
+      - name: 'Terraform Apply'
+        run: terraform apply -auto-approve plan.out
