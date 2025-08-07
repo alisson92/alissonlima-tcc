@@ -24,7 +24,7 @@ resource "aws_security_group" "bastion" {
 # SG para os Servidores de Aplicação (SIMPLIFICADO PARA DEBUG)
 resource "aws_security_group" "app" {
   name        = "app-${var.environment}"
-  description = "Regras para os servidores de aplicação"
+  description = "Regras para os servidores de aplicacao"
   vpc_id      = var.vpc_id
 
   # Regra de Entrada: Permite porta 80 de QUALQUER LUGAR DENTRO DA VPC
