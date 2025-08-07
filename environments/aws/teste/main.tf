@@ -16,7 +16,7 @@ module "security" {
   vpc_id      = module.networking.vpc_id 
   environment = "teste"
   # --- CORREÇÃO APLICADA ABAIXO ---
-  my_ip       = "45.230.208.30/32" 
+  my_ip       = "45.230.208.30" 
 }
 
 module "app_environment_teste" {
