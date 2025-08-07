@@ -15,7 +15,8 @@ module "security" {
 
   vpc_id      = module.networking.vpc_id 
   environment = "teste"
-  my_ip       = "45.230.208.30" # Verifique se este valor está 100% correto
+  # --- CORREÇÃO APLICADA ABAIXO ---
+  my_ip       = "45.230.208.30/32" 
 }
 
 module "app_environment_teste" {
@@ -25,6 +26,6 @@ module "app_environment_teste" {
   private_subnet_id = module.networking.private_subnet_id
   sg_app_id         = module.security.sg_app_id
   sg_db_id          = module.security.sg_db_id
-  ami_id            = "ami-da7a780751ae1b2435" # Ubuntu 22.04 LTS para us-east-1 (x86)
-  key_name          = "tcc-alisson-key"      # Verifique se este é o nome exato do seu par de chaves
+  ami_id            = "ami-da7a780751ae1b2435"
+  key_name          = "tcc-alisson-key"
 }
