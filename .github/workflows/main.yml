@@ -44,17 +44,17 @@ jobs:
           terraform plan -out=plan.out
           terraform apply -auto-approve plan.out
 
-      # --- LÓGICA DE DESTROY ATUALIZADA E CIRÚRGICA ---
+      # --- LÓGICA DE DESTROY ATUALIZADA E ATÔMICA ---
       - name: 'Terraform Destroy (se a ação for destroy)'
         if: github.event.inputs.action == 'destroy'
         run: |
-          echo "Iniciando destruição cirúrgica dos recursos efêmeros..."
+          echo "Iniciando destruição atômica dos recursos efêmeros..."
           
-          # Destrói os recursos em ordem, um módulo por vez, ignorando o de dados.
-          # A ordem é inversa à da criação para respeitar as dependências.
-          terraform destroy -auto-approve -target="module.bastion_host_teste"
-          terraform destroy -auto-approve -target="module.app_environment_teste"
-          terraform destroy -auto-approve -target="module.security"
-          terraform destroy -auto-approve -target="module.networking"
+          # Executa um ÚNICO comando destroy com múltiplos alvos
+          terraform destroy -auto-approve \
+            -target="module.bastion_host_teste" \
+            -target="module.app_environment_teste" \
+            -target="module.security" \
+            -target="module.networking"
           
           echo "Recursos efêmeros destruídos com sucesso. O módulo 'data_storage_teste' foi intencionalmente preservado."
