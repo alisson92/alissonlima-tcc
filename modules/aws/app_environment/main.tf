@@ -30,6 +30,12 @@ resource "aws_ebs_volume" "db_data" {
   size              = 10 # Tamanho do disco em GB
   type              = "gp3" # Tipo de disco de uso geral
 
+  # Garante que o volume não seja destruído quando a instância for
+  # Esta é uma camada extra de proteção para os dados.
+  lifecycle {
+    prevent_destroy = true
+  }
+
   tags = {
     Name = "ebs-db-data-${var.environment}"
   }
