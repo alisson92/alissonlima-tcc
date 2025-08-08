@@ -41,17 +41,25 @@ jobs:
       - name: 'Terraform Apply (se a ação for apply)'
         if: github.event.inputs.action == 'apply'
         run: |
+          echo "######################################################################"
+          echo "### INICIANDO O PROVISIONAMENTO DA INFRAESTRUTURA (APPLY) ###"
+          echo "######################################################################"
           terraform plan -out=plan.out
           terraform apply -auto-approve plan.out
 
-      # --- LÓGICA DE DESTROY ATUALIZADA COM TRATAMENTO DE ERRO ESPERADO ---
+      # --- LÓGICA DE DESTROY COM MENSAGENS AMIGÁVEIS ---
       - name: 'Terraform Destroy (se a ação for destroy)'
         if: github.event.inputs.action == 'destroy'
         run: |
-          echo "Iniciando destruição dos recursos efêmeros..."
-          
-          # Tenta destruir tudo. O comando vai falhar por causa da trava no volume, e isso é o esperado.
-          # A gente captura o erro e verifica se é o erro que esperamos.
+          echo "######################################################################"
+          echo "### INICIANDO A DESTRUIÇÃO DOS RECURSOS EFÊMEROS (DESTROY) ###"
+          echo "######################################################################"
+          echo ""
+          echo "AVISO: A execução a seguir irá gerar um 'erro' intencional e esperado."
+          echo "Isso acontece porque o volume de dados do banco (EBS Volume) está protegido"
+          echo "contra destruição para garantir a persistência dos dados."
+          echo "O pipeline irá capturar este 'erro' e finalizar com sucesso."
+          echo ""
           
           # 'set +e' desabilita a saída imediata em caso de erro
           set +e
@@ -63,15 +71,20 @@ jobs:
           # 'set -e' reabilita a saída imediata em caso de erro
           set -e
           
+          # Exibe o log completo da execução do destroy
           echo "$destroy_output"
+          echo ""
+          echo "----------------------------------------------------------------------"
           
           # Verifica se o comando falhou E se a falha foi APENAS pelo motivo esperado
           if [ $exit_code -ne 0 ] && echo "$destroy_output" | grep -q "lifecycle.prevent_destroy set"; then
-            echo "Destruição concluída com sucesso. O volume de dados foi intencionalmente preservado."
+            echo "✅ SUCESSO: A trava de segurança funcionou como esperado."
+            echo "Destruição dos recursos efêmeros concluída com sucesso. O volume de dados foi intencionalmente preservado."
             exit 0 # Força a saída com sucesso
           elif [ $exit_code -ne 0 ]; then
-            echo "A destruição falhou por um motivo inesperado."
+            echo "❌ ERRO: A destruição falhou por um motivo inesperado."
+            echo "$destroy_output" # Mostra o erro real
             exit 1 # Falha o pipeline se o erro for outro
           else
-            echo "Destruição concluída com sucesso."
+            echo "✅ SUCESSO: Destruição concluída com sucesso (nenhum recurso protegido foi encontrado)."
           fi
