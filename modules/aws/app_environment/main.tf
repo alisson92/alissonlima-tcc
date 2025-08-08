@@ -4,7 +4,7 @@ resource "aws_instance" "app_server" {
   instance_type          = var.instance_type_app
   subnet_id              = var.private_subnet_id
   key_name               = var.key_name
-  vpc_security_group_ids = [var.sg_app_id]
+  vpc_security_group_ids = [var.sg_application_id]
 
   disable_api_termination = true
 
@@ -19,7 +19,7 @@ resource "aws_instance" "db_server" {
   instance_type          = var.instance_type_db
   subnet_id              = var.private_subnet_id
   key_name               = var.key_name
-  vpc_security_group_ids = [var.sg_db_id]
+  vpc_security_group_ids = [var.sg_application_id]
 
   disable_api_termination = true
 
@@ -34,3 +34,4 @@ resource "aws_volume_attachment" "db_data_attachment" {
   volume_id   = var.db_volume_id
   instance_id = aws_instance.db_server.id
 }
+
