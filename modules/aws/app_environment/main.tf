@@ -33,7 +33,7 @@ resource "aws_ebs_volume" "db_data" {
   # Garante que o volume não seja destruído quando a instância for
   # Esta é uma camada extra de proteção para os dados.
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = var.persist_db_volume
   }
 
   tags = {

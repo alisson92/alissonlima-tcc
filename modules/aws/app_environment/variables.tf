@@ -39,3 +39,9 @@ variable "key_name" {
   description = "Nome do par de chaves EC2 para acesso SSH."
   type        = string
 }
+
+variable "persist_db_volume" {
+  description = "Se for true, o volume do banco de dados será protegido contra destruição."
+  type        = bool
+  default     = true # Por padrão, sempre protegido
+}
