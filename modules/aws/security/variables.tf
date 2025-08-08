@@ -1,5 +1,10 @@
 variable "vpc_id" {
-  description = "ID da VPC onde os Security Groups serão criados."
+  description = "ID da VPC onde os Security Groups serao criados."
+  type        = string
+}
+
+variable "vpc_cidr_block" {
+  description = "O bloco CIDR da VPC para usar nas regras de seguranca."
   type        = string
 }
 
@@ -9,11 +14,6 @@ variable "environment" {
 }
 
 variable "my_ip" {
-  description = "Seu endereço IP público para permitir acesso SSH ao Bastion Host."
-  type        = string
-}
-
-variable "vpc_cidr_block" {
-  description = "O bloco CIDR da VPC para usar nas regras de segurança."
+  description = "Seu endereco IP publico para permitir acesso SSH ao Bastion Host."
   type        = string
 }
