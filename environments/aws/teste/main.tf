@@ -10,16 +10,21 @@ data "aws_route53_zone" "primary" {
 module "networking" {
   count  = var.create_environment ? 1 : 0
   source = "../../../modules/aws/networking"
-  # ... (o resto das variáveis como antes)
+
+  vpc_cidr_block = "10.10.0.0/16"
+  environment    = "teste"
+  aws_region     = "us-east-1"
 }
 
 # --- CAMADA 2: SEGURANÇA ---
 module "security" {
   count          = var.create_environment ? 1 : 0
   source         = "../../../modules/aws/security"
-  vpc_id         = module.networking[0].vpc_id # Usa o índice [0] por causa do count
+
+  vpc_id         = module.networking[0].vpc_id
   vpc_cidr_block = module.networking[0].vpc_cidr_block_output
-  # ... (o resto das variáveis como antes)
+  environment    = "teste"
+  my_ip          = "45.230.208.30/32"
 }
 
 # --- CAMADA 3: ARMAZENAMENTO PERSISTENTE (SEM COUNT) ---
@@ -33,16 +38,25 @@ module "data_storage_teste" {
 module "app_environment_teste" {
   count             = var.create_environment ? 1 : 0
   source            = "../../../modules/aws/app_environment"
+
+  environment       = "teste"
+  private_subnet_id = module.networking[0].private_subnet_id
   sg_application_id = module.security[0].sg_application_id
   db_volume_id      = module.data_storage_teste.volume_id
-  # ... (o resto das variáveis como antes)
+  ami_id            = "ami-0a7d80731ae1b2435"
+  key_name          = "tcc-alisson-key"
 }
 
 # --- CAMADA 5: PONTO DE ACESSO ---
 module "bastion_host_teste" {
   count            = var.create_environment ? 1 : 0
   source           = "../../../modules/aws/bastion"
+
   public_subnet_id = module.networking[0].public_subnet_id
   sg_bastion_id    = module.security[0].sg_bastion_id
-  # ... (o resto das variáveis como antes)
+  zone_id          = data.aws_route53_zone.primary.zone_id
+  domain_name      = data.aws_route53_zone.primary.name
+  environment      = "teste"
+  ami_id           = "ami-0a7d80731ae1b2435"
+  key_name         = "tcc-alisson-key"
 }
