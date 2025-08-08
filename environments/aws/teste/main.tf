@@ -33,5 +33,10 @@ module "app_environment_teste" {
   # Lembre-se de verificar/criar estes pré-requisitos no console da AWS
   ami_id   = "ami-0a7d80731ae1b2435" # Ubuntu 22.04 LTS para us-east-1 (x86)
   key_name = "tcc-alisson-key"
+
+    # --- MUDANÇA AQUI ---
+  # Agora ele pega o valor da variável do ambiente e passa para dentro do módulo
+  persist_db_volume = var.persist_db_volume 
 }
+
 
