@@ -38,17 +38,13 @@ jobs:
       - name: 'Terraform Init'
         run: terraform init
 
-      # --- MUDANÇA CRÍTICA AQUI ---
-      # Agora temos dois passos de 'plan' condicionais
-
       - name: 'Terraform Plan (para Apply)'
         if: github.event.inputs.action == 'apply'
         run: terraform plan -out=plan.out
 
       - name: 'Terraform Plan (para Destroy)'
         if: github.event.inputs.action == 'destroy'
-        run: terraform plan -destroy -out=plan.out # <-- A flag -destroy está no lugar certo agora
+        run: terraform plan -destroy -out=plan.out
 
-      # Este passo agora executa o plano que foi gerado, seja ele de construção ou destruição
       - name: 'Terraform Apply'
         run: terraform apply -auto-approve plan.out
