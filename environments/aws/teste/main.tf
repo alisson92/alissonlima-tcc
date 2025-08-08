@@ -22,7 +22,7 @@ module "security" {
 
   # Conexões com o módulo de rede
   vpc_id         = module.networking.vpc_id
-  vpc_cidr_block = module.networking.vpc_cidr_block_output # <--- Atributo que estava faltando
+  vpc_cidr_block = module.networking.vpc_cidr_block_output
 
   # Variáveis do ambiente
   environment    = "teste"
@@ -45,10 +45,12 @@ module "app_environment_teste" {
   # Conexões com outros módulos
   environment       = "teste"
   private_subnet_id = module.networking.private_subnet_id
-  sg_app_id         = module.security.sg_app_id
-  sg_db_id          = module.security.sg_db_id
+  
+  # --- CORREÇÃO APLICADA AQUI ---
+  # Removemos sg_app_id e sg_db_id e usamos a nova saída unificada
+  sg_application_id = module.security.sg_application_id 
+  
   db_volume_id      = module.data_storage_teste.volume_id
-  sg_application_id = module.security.sg_application_id # <-- Usa o novo output
 
   # Parâmetros de configuração das VMs
   ami_id   = "ami-0a7d80731ae1b2435" # Ubuntu 22.04 LTS para us-east-1 (x86)
@@ -71,5 +73,4 @@ module "bastion_host_teste" {
   # Parâmetros de configuração da VM
   ami_id   = "ami-0a7d80731ae1b2435"
   key_name = "tcc-alisson-key"
-
 }
