@@ -17,3 +17,19 @@ variable "key_name" {
   description = "Nome do par de chaves EC2 para acesso SSH."
   type        = string
 }
+
+# --- Adicione estas duas variáveis que estão faltando ---
+variable "zone_id" {
+  description = "ID da Public Hosted Zone no Route 53."
+  type        = string
+}
+
+variable "domain_name" {
+  description = "O nome do seu domínio."
+  type        = string
+}
+
+variable "environment" {
+  description = "Nome do ambiente (ex: teste)."
+  type        = string
+}

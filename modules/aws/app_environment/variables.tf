@@ -45,3 +45,8 @@ variable "persist_db_volume" {
   type        = bool
   default     = true # Por padrão, sempre protegido
 }
+
+variable "db_volume_id" {
+  description = "ID do volume EBS a ser anexado ao servidor de banco de dados."
+  type        = string
+}

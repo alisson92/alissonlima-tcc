@@ -17,3 +17,8 @@ output "vpc_cidr_block_output" {
   description = "O bloco CIDR da VPC criada."
   value       = aws_vpc.main.cidr_block
 }
+
+output "private_subnet_availability_zone" {
+  description = "A Zona de Disponibilidade da sub-rede privada."
+  value       = aws_subnet.private.availability_zone
+}
