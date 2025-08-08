@@ -6,6 +6,8 @@ resource "aws_instance" "app_server" {
   key_name               = var.key_name
   vpc_security_group_ids = [var.sg_app_id]
 
+  disable_api_termination = true
+
   tags = {
     Name = "app-server-${var.environment}"
   }
@@ -18,6 +20,8 @@ resource "aws_instance" "db_server" {
   subnet_id              = var.private_subnet_id
   key_name               = var.key_name
   vpc_security_group_ids = [var.sg_db_id]
+
+  disable_api_termination = true
 
   tags = {
     Name = "db-server-${var.environment}"
