@@ -4,28 +4,28 @@ variable "environment" {
 }
 
 variable "private_subnet_id" {
-  description = "ID da sub-rede privada onde os servidores serão criados."
+  description = "ID da sub-rede privada onde os servidores serao criados."
   type        = string
 }
 
-variable "sg_app_id" {
-  description = "ID do Security Group para os servidores de aplicação."
-  type        = string
-}
+# --- VARIÁVEIS ANTIGAS REMOVIDAS ---
+# variable "sg_app_id" { ... }
+# variable "sg_db_id" { ... }
 
-variable "sg_db_id" {
-  description = "ID do Security Group para os servidores de banco de dados."
+# --- NOVA VARIÁVEL ADICIONADA ---
+variable "sg_application_id" {
+  description = "ID do Security Group unificado para a aplicacao."
   type        = string
 }
 
 variable "instance_type_app" {
-  description = "Tipo da instância EC2 para o servidor de aplicação."
+  description = "Tipo da instancia EC2 para o servidor de aplicacao."
   type        = string
   default     = "t3.micro"
 }
 
 variable "instance_type_db" {
-  description = "Tipo da instância EC2 para o servidor de banco de dados."
+  description = "Tipo da instancia EC2 para o servidor de banco de dados."
   type        = string
   default     = "t3.micro"
 }
@@ -38,12 +38,6 @@ variable "ami_id" {
 variable "key_name" {
   description = "Nome do par de chaves EC2 para acesso SSH."
   type        = string
-}
-
-variable "persist_db_volume" {
-  description = "Se for true, o volume do banco de dados será protegido contra destruição."
-  type        = bool
-  default     = true # Por padrão, sempre protegido
 }
 
 variable "db_volume_id" {
