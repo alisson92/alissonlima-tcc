@@ -38,13 +38,23 @@ jobs:
       - name: 'Terraform Init'
         run: terraform init
 
-      - name: 'Terraform Plan (para Apply)'
+      - name: 'Terraform Apply (se a ação for apply)'
         if: github.event.inputs.action == 'apply'
-        run: terraform plan -out=plan.out
+        run: |
+          terraform plan -out=plan.out
+          terraform apply -auto-approve plan.out
 
-      - name: 'Terraform Plan (para Destroy)'
+      # --- LÓGICA DE DESTROY ATUALIZADA E ATÔMICA ---
+      - name: 'Terraform Destroy (se a ação for destroy)'
         if: github.event.inputs.action == 'destroy'
-        run: terraform plan -destroy -out=plan.out
-
-      - name: 'Terraform Apply (Executa o plano gerado)'
-        run: terraform apply -auto-approve plan.out
+        run: |
+          echo "Iniciando destruição atômica dos recursos efêmeros..."
+          
+          # Executa um ÚNICO comando destroy com múltiplos alvos
+          terraform destroy -auto-approve \
+            -target="module.bastion_host_teste" \
+            -target="module.app_environment_teste" \
+            -target="module.security" \
+            -target="module.networking"
+          
+          echo "Recursos efêmeros destruídos com sucesso. O módulo 'data_storage_teste' foi intencionalmente preservado."
