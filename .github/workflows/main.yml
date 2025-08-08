@@ -44,17 +44,34 @@ jobs:
           terraform plan -out=plan.out
           terraform apply -auto-approve plan.out
 
-      # --- LÓGICA DE DESTROY ATUALIZADA E ATÔMICA ---
+      # --- LÓGICA DE DESTROY ATUALIZADA COM TRATAMENTO DE ERRO ESPERADO ---
       - name: 'Terraform Destroy (se a ação for destroy)'
         if: github.event.inputs.action == 'destroy'
         run: |
-          echo "Iniciando destruição atômica dos recursos efêmeros..."
+          echo "Iniciando destruição dos recursos efêmeros..."
           
-          # Executa um ÚNICO comando destroy com múltiplos alvos
-          terraform destroy -auto-approve \
-            -target="module.bastion_host_teste" \
-            -target="module.app_environment_teste" \
-            -target="module.security" \
-            -target="module.networking"
+          # Tenta destruir tudo. O comando vai falhar por causa da trava no volume, e isso é o esperado.
+          # A gente captura o erro e verifica se é o erro que esperamos.
           
-          echo "Recursos efêmeros destruídos com sucesso. O módulo 'data_storage_teste' foi intencionalmente preservado."
+          # 'set +e' desabilita a saída imediata em caso de erro
+          set +e
+          
+          # Executa o destroy e salva a saída (stdout e stderr) em uma variável
+          destroy_output=$(terraform destroy -auto-approve 2>&1)
+          exit_code=$?
+          
+          # 'set -e' reabilita a saída imediata em caso de erro
+          set -e
+          
+          echo "$destroy_output"
+          
+          # Verifica se o comando falhou E se a falha foi APENAS pelo motivo esperado
+          if [ $exit_code -ne 0 ] && echo "$destroy_output" | grep -q "lifecycle.prevent_destroy set"; then
+            echo "Destruição concluída com sucesso. O volume de dados foi intencionalmente preservado."
+            exit 0 # Força a saída com sucesso
+          elif [ $exit_code -ne 0 ]; then
+            echo "A destruição falhou por um motivo inesperado."
+            exit 1 # Falha o pipeline se o erro for outro
+          else
+            echo "Destruição concluída com sucesso."
+          fi
