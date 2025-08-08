@@ -44,7 +44,7 @@ jobs:
           terraform plan -out=plan.out
           terraform apply -auto-approve plan.out
 
-      # --- LÓGICA DE DESTROY ATUALIZADA ---
+      # --- LÓGICA DE DESTROY ATUALIZADA E CIRÚRGICA ---
       - name: 'Terraform Destroy (se a ação for destroy)'
         if: github.event.inputs.action == 'destroy'
         run: |
