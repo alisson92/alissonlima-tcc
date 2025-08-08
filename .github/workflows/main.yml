@@ -51,6 +51,7 @@ jobs:
           echo "Iniciando destruição cirúrgica dos recursos efêmeros..."
           
           # Destrói os recursos em ordem, um módulo por vez, ignorando o de dados.
+          # A ordem é inversa à da criação para respeitar as dependências.
           terraform destroy -auto-approve -target="module.bastion_host_teste"
           terraform destroy -auto-approve -target="module.app_environment_teste"
           terraform destroy -auto-approve -target="module.security"
