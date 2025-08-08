@@ -39,4 +39,14 @@ module "app_environment_teste" {
   persist_db_volume = var.persist_db_volume 
 }
 
+# --- NOVO BLOCO ---
+# Chama o módulo para criar o Bastion Host
+module "bastion_host_teste" {
+  source = "../../../modules/aws/bastion"
+
+  public_subnet_id = module.networking.public_subnet_id
+  sg_bastion_id    = module.security.sg_bastion_id
+  ami_id           = "ami-0a7d80731ae1b2435" # Pode usar a mesma AMI do Ubuntu
+  key_name         = "tcc-alisson-key"
+}
 
