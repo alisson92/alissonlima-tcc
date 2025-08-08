@@ -3,3 +3,9 @@ variable "persist_db_volume" {
   type        = bool
   default     = true # O padrão, se o pipeline não passar nada, é proteger.
 }
+
+variable "create_environment" {
+  description = "Se for true, cria todos os recursos efêmeros. Se for false, os destrói."
+  type        = bool
+  default     = true
+}
