@@ -24,22 +24,9 @@ resource "aws_instance" "db_server" {
   }
 }
 
-# --- Disco Persistente para o Banco de Dados (SIMPLIFICADO) ---
-resource "aws_ebs_volume" "db_data" {
-  availability_zone = aws_instance.db_server.availability_zone
-  size              = 10
-  type              = "gp3"
-
-  # SEM o bloco lifecycle aqui dentro
-
-  tags = {
-    Name = "ebs-db-data-${var.environment}"
-  }
-}
-
 # --- Anexa o disco ao servidor de banco de dados ---
 resource "aws_volume_attachment" "db_data_attachment" {
   device_name = "/dev/sdf"
-  volume_id   = aws_ebs_volume.db_data.id
+  volume_id   = var.db_volume_id
   instance_id = aws_instance.db_server.id
 }

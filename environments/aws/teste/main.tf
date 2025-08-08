@@ -2,6 +2,12 @@ provider "aws" {
   region = "us-east-1"
 }
 
+# Data source para buscar automaticamente as informações do seu domínio no Route 53
+data "aws_route53_zone" "primary" {
+  name = "alissonlima.dev.br"
+}
+
+# --- CAMADA 1: REDE ---
 module "networking" {
   source = "../../../modules/aws/networking"
 
@@ -10,43 +16,58 @@ module "networking" {
   aws_region     = "us-east-1"
 }
 
+# --- CAMADA 2: SEGURANÇA ---
 module "security" {
   source = "../../../modules/aws/security"
 
+  # Conexões com o módulo de rede
   vpc_id         = module.networking.vpc_id
-  vpc_cidr_block = "10.10.0.0/16" # Passando o CIDR para as regras simplificadas
+  vpc_cidr_block = module.networking.vpc_cidr_block_output # <--- Atributo que estava faltando
+
+  # Variáveis do ambiente
   environment    = "teste"
-  my_ip          = "45.230.208.30/32" # Lembre-se de colocar seu IP correto
+  my_ip          = "45.230.208.30/32" # Lembre-se de manter seu IP correto
 }
 
-# --- NOVO BLOCO ---  ## Adicionado em 07/08/2025
-# Chama o módulo para criar os servidores do ambiente de teste
+# --- CAMADA 3: ARMAZENAMENTO PERSISTENTE ---
+module "data_storage_teste" {
+  source = "../../../modules/aws/data_storage"
+
+  environment                 = "teste"
+  # Garante que o volume seja criado na mesma Zona de Disponibilidade da sub-rede privada
+  db_server_availability_zone = module.networking.private_subnet_availability_zone
+}
+
+# --- CAMADA 4: COMPUTAÇÃO (Servidores) ---
 module "app_environment_teste" {
   source = "../../../modules/aws/app_environment"
 
-  # Conectando as saídas dos outros módulos como entradas aqui
+  # Conexões com outros módulos
   environment       = "teste"
   private_subnet_id = module.networking.private_subnet_id
   sg_app_id         = module.security.sg_app_id
   sg_db_id          = module.security.sg_db_id
+  db_volume_id      = module.data_storage_teste.volume_id
 
-  # Lembre-se de verificar/criar estes pré-requisitos no console da AWS
+  # Parâmetros de configuração das VMs
   ami_id   = "ami-0a7d80731ae1b2435" # Ubuntu 22.04 LTS para us-east-1 (x86)
   key_name = "tcc-alisson-key"
-
-    # --- MUDANÇA AQUI ---
-  # Agora ele pega o valor da variável do ambiente e passa para dentro do módulo
-  persist_db_volume = var.persist_db_volume 
 }
 
-# --- NOVO BLOCO ---
-# Chama o módulo para criar o Bastion Host
+# --- CAMADA 5: PONTO DE ACESSO ---
 module "bastion_host_teste" {
   source = "../../../modules/aws/bastion"
 
+  # Conexões com outros módulos
   public_subnet_id = module.networking.public_subnet_id
   sg_bastion_id    = module.security.sg_bastion_id
-  ami_id           = "ami-0a7d80731ae1b2435" # Pode usar a mesma AMI do Ubuntu
-  key_name         = "tcc-alisson-key"
-}
+  zone_id          = data.aws_route53_zone.primary.zone_id
+  domain_name      = data.aws_route53_zone.primary.name
 
+  # Variáveis do ambiente
+  environment      = "teste"
+
+  # Parâmetros de configuração da VM
+  ami_id   = "ami-0a7d80731ae1b2435"
+  key_name = "tcc-alisson-key"
+}
