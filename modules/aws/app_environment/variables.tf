@@ -8,10 +8,6 @@ variable "private_subnet_id" {
   type        = string
 }
 
-# --- VARIÁVEIS ANTIGAS REMOVIDAS ---
-# variable "sg_app_id" { ... }
-# variable "sg_db_id" { ... }
-
 # --- NOVA VARIÁVEL ADICIONADA ---
 variable "sg_application_id" {
   description = "ID do Security Group unificado para a aplicacao."
