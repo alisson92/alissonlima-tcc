@@ -33,7 +33,5 @@ module "app_environment_teste" {
   # Lembre-se de verificar/criar estes pré-requisitos no console da AWS
   ami_id   = "ami-0a7d80731ae1b2435" # Ubuntu 22.04 LTS para us-east-1 (x86)
   key_name = "tcc-alisson-key"
-
-   # --- LINHA ADICIONADA ---
-  persist_db_volume = true # Aqui você controla a proteção do volume para este ambiente
 }
+
