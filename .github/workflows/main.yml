@@ -38,12 +38,13 @@ jobs:
       - name: 'Terraform Init'
         run: terraform init
 
-      - name: 'Terraform Apply (se a ação for apply)'
+      - name: 'Terraform Plan (para Apply)'
         if: github.event.inputs.action == 'apply'
-        run: |
-          terraform plan -out=plan.out
-          terraform apply -auto-approve plan.out
+        run: terraform plan -out=plan.out
 
-      - name: 'Terraform Destroy (se a ação for destroy)'
+      - name: 'Terraform Plan (para Destroy)'
         if: github.event.inputs.action == 'destroy'
-        run: terraform destroy -auto-approve
+        run: terraform plan -destroy -out=plan.out
+
+      - name: 'Terraform Apply (Executa o plano gerado)'
+        run: terraform apply -auto-approve plan.out
