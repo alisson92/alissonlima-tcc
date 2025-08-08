@@ -25,16 +25,35 @@ resource "aws_instance" "db_server" {
 }
 
 # --- Disco Persistente para o Banco de Dados (O "Volume") ---
-resource "aws_ebs_volume" "db_data" {
-  availability_zone = aws_instance.db_server.availability_zone
-  size              = 10 # Tamanho do disco em GB
-  type              = "gp3" # Tipo de disco de uso geral
 
-  # Garante que o volume não seja destruído quando a instância for
-  # Esta é uma camada extra de proteção para os dados.
+# Recurso 1: O Volume PROTEGIDO
+# Este recurso só será criado se var.persist_db_volume for true.
+resource "aws_ebs_volume" "db_data_protected" {
+  count = var.persist_db_volume ? 1 : 0 # A mágica do count: cria 1 se true, 0 se false
+
+  availability_zone = aws_instance.db_server.availability_zone
+  size              = 10
+  type              = "gp3"
+
   lifecycle {
-    prevent_destroy = var.persist_db_volume
+    prevent_destroy = true
   }
+
+  tags = {
+    Name = "ebs-db-data-${var.environment}"
+  }
+}
+
+# Recurso 2: O Volume DESPROTEGIDO (para permitir o destroy)
+# Este recurso só será criado se var.persist_db_volume for false.
+resource "aws_ebs_volume" "db_data_unprotected" {
+  count = var.persist_db_volume ? 0 : 1 # A lógica invertida: cria 0 se true, 1 se false
+
+  availability_zone = aws_instance.db_server.availability_zone
+  size              = 10
+  type              = "gp3"
+
+  # Sem o bloco lifecycle, este volume pode ser destruído.
 
   tags = {
     Name = "ebs-db-data-${var.environment}"
@@ -43,7 +62,8 @@ resource "aws_ebs_volume" "db_data" {
 
 # --- Anexa o disco ao servidor de banco de dados ---
 resource "aws_volume_attachment" "db_data_attachment" {
-  device_name = "/dev/sdf" # Como o disco será visto dentro do Linux
-  volume_id   = aws_ebs_volume.db_data.id
+  device_name = "/dev/sdf"
+  # Usa uma lógica para pegar o ID do volume que foi de fato criado
+  volume_id   = var.persist_db_volume ? aws_ebs_volume.db_data_protected[0].id : aws_ebs_volume.db_data_unprotected[0].id
   instance_id = aws_instance.db_server.id
 }
