@@ -11,6 +11,12 @@ on:
         options:
           - apply
           - destroy
+      # --- NOVO INPUT ADICIONADO AQUI ---
+      destroy_volume:
+        description: 'Destruir o volume de dados do DB? (ATENÇÃO: PERDA DE DADOS)'
+        required: true
+        default: false # O padrão seguro é NUNCA destruir o volume
+        type: boolean
 
 jobs:
   terraform:
@@ -40,11 +46,17 @@ jobs:
 
       - name: 'Terraform Plan (para Apply)'
         if: github.event.inputs.action == 'apply'
+        # A variável 'persist_db_volume' usará seu valor padrão 'true' aqui
         run: terraform plan -out=plan.out
 
       - name: 'Terraform Plan (para Destroy)'
         if: github.event.inputs.action == 'destroy'
-        run: terraform plan -destroy -out=plan.out
+        # --- MUDANÇA CRÍTICA AQUI ---
+        # Passa o input do workflow para a variável do Terraform.
+        # A lógica é invertida: se destroy_volume for 'true', persist_db_volume deve ser 'false'.
+        run: >
+          terraform plan -destroy -out=plan.out 
+          -var="persist_db_volume=${{ github.event.inputs.destroy_volume == 'false' }}"
 
       - name: 'Terraform Apply'
         run: terraform apply -auto-approve plan.out
