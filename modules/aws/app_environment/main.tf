@@ -35,3 +35,20 @@ resource "aws_volume_attachment" "db_data_attachment" {
   instance_id = aws_instance.db_server.id
 }
 
+# Cria o registro DNS para o Servidor de Aplicação
+resource "aws_route53_record" "app_server_dns" {
+  zone_id = var.private_zone_id
+  name    = "app-server.${var.environment}.${var.private_domain_name}"
+  type    = "A"
+  ttl     = 300
+  records = [aws_instance.app_server.private_ip]
+}
+
+# Cria o registro DNS para o Servidor de Banco de Dados
+resource "aws_route53_record" "db_server_dns" {
+  zone_id = var.private_zone_id
+  name    = "db-server.${var.environment}.${var.private_domain_name}"
+  type    = "A"
+  ttl     = 300
+  records = [aws_instance.db_server.private_ip]
+}
