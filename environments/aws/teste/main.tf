@@ -27,6 +27,16 @@ module "security" {
   my_ip          = "45.230.208.30/32"
 }
 
+# --- CAMADA 2.5: DNS PRIVADO ---
+resource "aws_route53_zone" "private" {
+  count = var.create_environment ? 1 : 0
+  name  = "internal.alissonlima.dev.br"
+
+  vpc {
+    vpc_id = module.networking[0].vpc_id
+  }
+}
+
 # --- CAMADA 3: ARMAZENAMENTO PERSISTENTE (SEM COUNT) ---
 module "data_storage_teste" {
   source                      = "../../../modules/aws/data_storage"
@@ -45,6 +55,10 @@ module "app_environment_teste" {
   db_volume_id      = module.data_storage_teste.volume_id
   ami_id            = "ami-0a7d80731ae1b2435"
   key_name          = "tcc-alisson-key"
+
+# --- LIGAÇÕES DE DNS PRIVADO ---
+  private_zone_id     = aws_route53_zone.private[0].zone_id
+  private_domain_name = aws_route53_zone.private[0].name
 }
 
 # --- CAMADA 5: PONTO DE ACESSO ---
