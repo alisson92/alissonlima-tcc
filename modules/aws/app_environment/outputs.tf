@@ -7,3 +7,8 @@ output "db_server_private_ip" {
   description = "O IP privado do servidor de banco de dados."
   value       = aws_instance.db_server.private_ip
 }
+
+output "app_server_id" {
+  description = "O ID da instância EC2 do servidor de aplicação."
+  value       = aws_instance.app_server.id
+}

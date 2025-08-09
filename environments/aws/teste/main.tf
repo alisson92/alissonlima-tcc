@@ -74,3 +74,39 @@ module "bastion_host_teste" {
   ami_id           = "ami-0a7d80731ae1b2435"
   key_name         = "tcc-alisson-key"
 }
+
+# --- CAMADA 6: PONTO DE ENTRADA DA APLICAÇÃO (ALB) ---
+module "load_balancer_teste" {
+  count             = var.create_environment ? 1 : 0
+  source            = "../../../modules/aws/load_balancer"
+
+  vpc_id            = module.networking[0].vpc_id
+  # O ALB precisa de pelo menos duas sub-redes em AZs diferentes, mas para o teste uma funciona.
+  public_subnet_ids = [module.networking[0].public_subnet_id] 
+  sg_alb_id         = module.security[0].sg_alb_id
+  environment       = "teste"
+}
+
+# --- CAMADA 7: CONEXÕES FINAIS ---
+
+# Conecta a instância de aplicação ao Target Group do Load Balancer
+resource "aws_lb_target_group_attachment" "app_server" {
+  count            = var.create_environment ? 1 : 0
+  target_group_arn = module.load_balancer_teste[0].target_group_arn
+  target_id        = module.app_environment_teste[0].app_server_id # <-- Precisamos adicionar este output
+  port             = 80
+}
+
+# Cria o registro de DNS amigável para a aplicação
+resource "aws_route53_record" "app_dns" {
+  count   = var.create_environment ? 1 : 0
+  zone_id = data.aws_route53_zone.primary.zone_id
+  name    = "teste.alissonlima.dev.br"
+  type    = "A"
+
+  alias {
+    name                   = module.load_balancer_teste[0].alb_dns_name
+    zone_id                = module.load_balancer_teste[0].alb_zone_id
+    evaluate_target_health = true
+  }
+}
