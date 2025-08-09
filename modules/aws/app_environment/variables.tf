@@ -40,3 +40,13 @@ variable "db_volume_id" {
   description = "ID do volume EBS a ser anexado ao servidor de banco de dados."
   type        = string
 }
+
+variable "zone_id" {
+  description = "ID da Private Hosted Zone no Route 53."
+  type        = string
+}
+
+variable "private_domain_name" {
+  description = "O nome do domínio privado (ex: internal.alissonlima.dev.br)."
+  type        = string
+}
