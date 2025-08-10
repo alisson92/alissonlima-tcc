@@ -5,9 +5,9 @@ resource "aws_ebs_volume" "db_data" {
   type              = "gp3"
 
   # A TRAVA DE SEGURANÇA VIVE AQUI, PERMANENTEMENTE
-  #lifecycle {
-  #  prevent_destroy = true
-  #}
+  lifecycle {
+    prevent_destroy = true
+  }
 
   tags = {
     Name = "ebs-db-data-${var.environment}"
