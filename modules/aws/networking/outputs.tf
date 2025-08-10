@@ -18,7 +18,8 @@ output "private_subnet_ids" { # <-- Mudou para plural
   value       = [aws_subnet.private_a.id, aws_subnet.private_b.id]
 }
 
+# --- LINHA ADICIONADA/CORRIGIDA ---
 output "private_subnet_availability_zone" {
-  description = "A Zona de Disponibilidade da primeira sub-rede privada."
+  description = "A Zona de Disponibilidade da primeira sub-rede privada (AZ 'a')."
   value       = aws_subnet.private_a.availability_zone
 }
