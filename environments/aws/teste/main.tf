@@ -28,6 +28,7 @@ module "security" {
 }
 
 # --- CAMADA 2.5: DNS PRIVADO ---
+# Cria a "lista telefônica" que só funciona dentro da VPC
 resource "aws_route53_zone" "private" {
   count = var.create_environment ? 1 : 0
   name  = "internal.alissonlima.dev.br"
@@ -41,7 +42,7 @@ resource "aws_route53_zone" "private" {
 module "data_storage_teste" {
   source                      = "../../../modules/aws/data_storage"
   environment                 = "teste"
-  db_server_availability_zone = var.create_environment ? module.networking[0].private_subnet_availability_zone : "us-east-1b" # Lógica para evitar erro quando a rede não existe
+  db_server_availability_zone = var.create_environment ? module.networking[0].private_subnet_availability_zone : "us-east-1b"
 }
 
 # --- CAMADA 4: COMPUTAÇÃO ---
@@ -50,13 +51,13 @@ module "app_environment_teste" {
   source            = "../../../modules/aws/app_environment"
 
   environment       = "teste"
-  private_subnet_id = module.networking[0].private_subnet_id
+  private_subnet_id = module.networking[0].private_subnet_ids[0]
   sg_application_id = module.security[0].sg_application_id
   db_volume_id      = module.data_storage_teste.volume_id
   ami_id            = "ami-0a7d80731ae1b2435"
   key_name          = "tcc-alisson-key"
 
-# --- LIGAÇÕES DE DNS PRIVADO ---
+  # --- LIGAÇÕES DE DNS PRIVADO CORRIGIDAS ---
   private_zone_id     = aws_route53_zone.private[0].zone_id
   private_domain_name = aws_route53_zone.private[0].name
 }
@@ -66,7 +67,7 @@ module "bastion_host_teste" {
   count            = var.create_environment ? 1 : 0
   source           = "../../../modules/aws/bastion"
 
-  public_subnet_id = module.networking[0].public_subnet_id
+  public_subnet_id = module.networking[0].public_subnet_ids[0]
   sg_bastion_id    = module.security[0].sg_bastion_id
   zone_id          = data.aws_route53_zone.primary.zone_id
   domain_name      = data.aws_route53_zone.primary.name
@@ -81,23 +82,19 @@ module "load_balancer_teste" {
   source            = "../../../modules/aws/load_balancer"
 
   vpc_id            = module.networking[0].vpc_id
-  # O ALB precisa de pelo menos duas sub-redes em AZs diferentes, mas para o teste uma funciona.
-  public_subnet_ids = [module.networking[0].public_subnet_id] 
+  public_subnet_ids = module.networking[0].public_subnet_ids
   sg_alb_id         = module.security[0].sg_alb_id
   environment       = "teste"
 }
 
 # --- CAMADA 7: CONEXÕES FINAIS ---
-
-# Conecta a instância de aplicação ao Target Group do Load Balancer
 resource "aws_lb_target_group_attachment" "app_server" {
   count            = var.create_environment ? 1 : 0
   target_group_arn = module.load_balancer_teste[0].target_group_arn
-  target_id        = module.app_environment_teste[0].app_server_id # <-- Precisamos adicionar este output
+  target_id        = module.app_environment_teste[0].app_server_id
   port             = 80
 }
 
-# Cria o registro de DNS amigável para a aplicação
 resource "aws_route53_record" "app_dns" {
   count   = var.create_environment ? 1 : 0
   zone_id = data.aws_route53_zone.primary.zone_id
