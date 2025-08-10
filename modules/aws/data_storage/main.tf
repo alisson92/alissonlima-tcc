@@ -1,6 +1,6 @@
 # --- Disco Persistente para o Banco de Dados (O "Volume") ---
 resource "aws_ebs_volume" "db_data" {
-  availability_zone = var.db_server_availability_zone
+  availability_zone = var.availability_zone
   size              = 10 
   type              = "gp3"
 

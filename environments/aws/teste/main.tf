@@ -40,9 +40,11 @@ resource "aws_route53_zone" "private" {
 
 # --- CAMADA 3: ARMAZENAMENTO PERSISTENTE (SEM COUNT) ---
 module "data_storage_teste" {
-  source                      = "../../../modules/aws/data_storage"
-  environment                 = "teste"
-  db_server_availability_zone = var.create_environment ? module.networking[0].private_subnet_availability_zone : "us-east-1b"
+  source = "../../../modules/aws/data_storage"
+
+  environment       = "teste"
+  # FIXANDO a AZ para o nosso armazenamento persistente
+  availability_zone = "us-east-1b" 
 }
 
 # --- CAMADA 4: COMPUTAÇÃO ---
