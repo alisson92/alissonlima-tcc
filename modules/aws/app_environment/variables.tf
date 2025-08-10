@@ -8,7 +8,6 @@ variable "private_subnet_id" {
   type        = string
 }
 
-# --- NOVA VARIÁVEL ADICIONADA ---
 variable "sg_application_id" {
   description = "ID do Security Group unificado para a aplicacao."
   type        = string
@@ -48,5 +47,10 @@ variable "private_zone_id" {
 
 variable "private_domain_name" {
   description = "O nome do domínio privado (ex: internal.alissonlima.dev.br)."
+  type        = string
+}
+
+variable "db_server_availability_zone" {
+  description = "A Zona de Disponibilidade para o servidor de banco de dados, para alinhar com o volume EBS."
   type        = string
 }
