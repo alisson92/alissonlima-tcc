@@ -91,11 +91,11 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y ansible sshpass
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          echo "${{ secrets.TCC_ALISSON_KEY }}" > ~/.ssh/tcc_alisson_key
+          chmod 600 ~/.ssh/tcc_alisson_key
           
           eval "$(ssh-agent -s)"
-          ssh-add ~/.ssh/id_rsa
+          ssh-add ~/.ssh/tcc_alisson_key
 
           cat <<EOF > inventory.ini
           [app_servers]
@@ -106,7 +106,7 @@ jobs:
 
           [all:vars]
           ansible_user=ubuntu
-          ansible_ssh_private_key_file=~/.ssh/id_rsa
+          ansible_ssh_private_key_file=~/.ssh/tcc_alisson_key
           ansible_ssh_common_args='-o StrictHostKeyChecking=no -o ProxyCommand="ssh -A -W %h:%p -q ubuntu@${{ needs.apply_infrastructure.outputs.bastion_ip }}"'
           EOF
           
