@@ -78,12 +78,13 @@ jobs:
 
       - name: 'Abrir Acesso Temporário para Ansible'
         run: |
-          echo "Abrindo a porta 22 no SG do Bastion para 0.0.0.0/0..."
+          echo "Abrindo a porta 22 no SG do Bastion para o Runner do Pipeline..."
+          RUNNER_IP=$(curl -s ifconfig.me)
           aws ec2 authorize-security-group-ingress \
             --group-id ${{ needs.apply_infrastructure.outputs.sg_bastion_id }} \
             --protocol tcp \
             --port 22 \
-            --cidr 0.0.0.0/0
+            --cidr ${RUNNER_IP}/32
 
       - name: 'Configurar Servidores com Ansible'
         # O working-directory é definido aqui, pois o checkout é feito na raiz
@@ -93,21 +94,16 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.TCC_ALISSON_KEY }}" > ~/.ssh/tcc_alisson_key
           chmod 600 ~/.ssh/tcc_alisson_key
-          
-          eval "$(ssh-agent -s)"
-          ssh-add ~/.ssh/tcc_alisson_key
 
           cat <<EOF > inventory.ini
           [app_servers]
           app-server ansible_host=${{ needs.apply_infrastructure.outputs.app_server_ip }}
-          
           [db_servers]
           db-server ansible_host=${{ needs.apply_infrastructure.outputs.db_server_ip }}
-
           [all:vars]
           ansible_user=ubuntu
           ansible_ssh_private_key_file=~/.ssh/tcc_alisson_key
-          ansible_ssh_common_args='-o StrictHostKeyChecking=no -o ProxyCommand="ssh -A -W %h:%p -q ubuntu@${{ needs.apply_infrastructure.outputs.bastion_ip }}"'
+          ansible_ssh_common_args='-o StrictHostKeyChecking=no -o ProxyCommand="ssh -i ~/.ssh/tcc_alisson_key -o StrictHostKeyChecking=no -W %h:%p ubuntu@${{ needs.apply_infrastructure.outputs.bastion_ip }}"'
           EOF
           
           ansible-playbook -i inventory.ini ../../../ansible/playbook_docker.yml -vvv
@@ -115,12 +111,13 @@ jobs:
       - name: 'Fechar Acesso Temporário do Ansible'
         if: always() # Garante que este passo sempre rode, mesmo que o anterior falhe
         run: |
-          echo "Fechando a porta 22 no SG do Bastion para 0.0.0.0/0..."
+          echo "Fechando a porta 22 no SG do Bastion para o Runner do Pipeline..."
+          RUNNER_IP=$(curl -s ifconfig.me)
           aws ec2 revoke-security-group-ingress \
             --group-id ${{ needs.apply_infrastructure.outputs.sg_bastion_id }} \
             --protocol tcp \
             --port 22 \
-            --cidr 0.0.0.0/0
+            --cidr ${RUNNER_IP}/32
 
   # --- JOB 3: DESTRÓI A INFRAESTRUTURA ---
   destroy_infrastructure:
