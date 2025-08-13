@@ -75,3 +75,48 @@ resource "aws_route_table_association" "public_b" {
   subnet_id      = aws_subnet.public_b.id
   route_table_id = aws_route_table.public.id
 }
+
+# --- LÓGICA DO NAT GATEWAY PARA ACESSO À INTERNET DA REDE PRIVADA ---
+
+# 1. Aloca um endereço de IP Fixo para o nosso NAT Gateway
+resource "aws_eip" "nat" {
+  domain = "vpc"
+
+  # Garante que o IP só seja criado se o Internet Gateway já existir
+  depends_on = [aws_internet_gateway.gw]
+}
+
+# 2. Cria o NAT Gateway na sub-rede PÚBLICA
+resource "aws_nat_gateway" "nat" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = aws_subnet.public_a.id # Colocamos na primeira sub-rede pública
+
+  tags = {
+    Name = "nat-gw-${var.environment}"
+  }
+}
+
+# 3. Cria um novo "mapa de rotas" para as sub-redes PRIVADAS
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block     = "0.0.0.0/0" # Para qualquer lugar da internet...
+    nat_gateway_id = aws_nat_gateway.nat.id # ...use o NAT Gateway como saída.
+  }
+
+  tags = {
+    Name = "rt-private-${var.environment}"
+  }
+}
+
+# 4. Associa este novo mapa de rotas às DUAS sub-redes privadas
+resource "aws_route_table_association" "private_a" {
+  subnet_id      = aws_subnet.private_a.id
+  route_table_id = aws_route_table.private.id
+}
+
+resource "aws_route_table_association" "private_b" {
+  subnet_id      = aws_subnet.private_b.id
+  route_table_id = aws_route_table.private.id
+}

@@ -1,3 +1,4 @@
+
 name: 'Terraform TCC Pipeline'
 
 on:
@@ -13,9 +14,10 @@ on:
           - destroy
 
 jobs:
-  # --- JOB 1: PROVISIONA A INFRAESTRUTURA ---
+  # --- JOB 1: APLICA A INFRAESTRUTURA ---
   apply_infrastructure:
     name: 'Provisionar Infraestrutura (Terraform Apply)'
+    # Só executa se a ação for 'apply'
     if: github.event.inputs.action == 'apply'
     runs-on: ubuntu-latest
     
@@ -24,7 +26,6 @@ jobs:
       app_server_ip: ${{ steps.outputs.outputs.app_server_private_ip }}
       db_server_ip: ${{ steps.outputs.outputs.db_server_private_ip }}
       bastion_ip: ${{ steps.outputs.outputs.bastion_public_ip }}
-      sg_bastion_id: ${{ steps.outputs.outputs.sg_bastion_id }}
 
     defaults:
       run:
@@ -56,72 +57,50 @@ jobs:
           echo "app_server_private_ip=$(terraform output -raw app_server_private_ip)" >> $GITHUB_OUTPUT
           echo "db_server_private_ip=$(terraform output -raw db_server_private_ip)" >> $GITHUB_OUTPUT
           echo "bastion_public_ip=$(terraform output -raw bastion_public_ip)" >> $GITHUB_OUTPUT
-          echo "sg_bastion_id=$(terraform output -raw sg_bastion_id)" >> $GITHUB_OUTPUT
-
   # --- JOB 2: CONFIGURA OS SERVIDORES ---
   configure_servers:
     name: 'Configurar Servidores (Ansible)'
     runs-on: ubuntu-latest
+    # Define que este job depende do sucesso do job 'apply_infrastructure'
     needs: apply_infrastructure
+    # Também só executa se a ação for 'apply'
     if: needs.apply_infrastructure.result == 'success' && github.event.inputs.action == 'apply'
 
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v4
 
-      - name: 'Configure AWS Credentials'
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: 'Abrir Acesso Temporário para Ansible'
-        run: |
-          echo "Abrindo a porta 22 no SG do Bastion para o Runner do Pipeline..."
-          RUNNER_IP=$(curl -s ifconfig.me)
-          aws ec2 authorize-security-group-ingress \
-            --group-id ${{ needs.apply_infrastructure.outputs.sg_bastion_id }} \
-            --protocol tcp \
-            --port 22 \
-            --cidr ${RUNNER_IP}/32
-
       - name: 'Configurar Servidores com Ansible'
         # O working-directory é definido aqui, pois o checkout é feito na raiz
         working-directory: ./environments/aws/teste
         run: |
+          # Instala o Ansible e o SSH Client
           sudo apt-get update && sudo apt-get install -y ansible sshpass
+          
+          # Configura a chave SSH a partir do Secret do GitHub
           mkdir -p ~/.ssh
-          echo "${{ secrets.TCC_ALISSON_KEY }}" > ~/.ssh/tcc_alisson_key
-          chmod 600 ~/.ssh/tcc_alisson_key
-
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          
+          # Cria um inventário dinâmico usando os outputs do job anterior
           cat <<EOF > inventory.ini
           [app_servers]
           app-server ansible_host=${{ needs.apply_infrastructure.outputs.app_server_ip }}
+          
           [db_servers]
           db-server ansible_host=${{ needs.apply_infrastructure.outputs.db_server_ip }}
           [all:vars]
           ansible_user=ubuntu
-          ansible_ssh_private_key_file=~/.ssh/tcc_alisson_key
-          ansible_ssh_common_args='-o StrictHostKeyChecking=no -o ProxyCommand="ssh -i ~/.ssh/tcc_alisson_key -o StrictHostKeyChecking=no -W %h:%p ubuntu@${{ needs.apply_infrastructure.outputs.bastion_ip }}"'
+          ansible_ssh_private_key_file=~/.ssh/id_rsa
+          ansible_ssh_common_args='-o StrictHostKeyChecking=no -o ProxyCommand="ssh -A -W %h:%p -q ubuntu@${{ needs.apply_infrastructure.outputs.bastion_ip }}"'
           EOF
           
+          # Executa o playbook a partir da raiz do projeto
           ansible-playbook -i inventory.ini ../../../ansible/playbook_docker.yml -vvv
-              
-      - name: 'Fechar Acesso Temporário do Ansible'
-        if: always() # Garante que este passo sempre rode, mesmo que o anterior falhe
-        run: |
-          echo "Fechando a porta 22 no SG do Bastion para o Runner do Pipeline..."
-          RUNNER_IP=$(curl -s ifconfig.me)
-          aws ec2 revoke-security-group-ingress \
-            --group-id ${{ needs.apply_infrastructure.outputs.sg_bastion_id }} \
-            --protocol tcp \
-            --port 22 \
-            --cidr ${RUNNER_IP}/32
-
   # --- JOB 3: DESTRÓI A INFRAESTRUTURA ---
   destroy_infrastructure:
     name: 'Destruir Infraestrutura (Terraform Destroy)'
+    # Só executa se a ação for 'destroy'
     if: github.event.inputs.action == 'destroy'
     runs-on: ubuntu-latest
 
@@ -132,7 +111,7 @@ jobs:
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v4
-      
+
       - name: 'Configure AWS Credentials'
         uses: aws-actions/configure-aws-credentials@v4
         with:
