@@ -105,8 +105,12 @@ jobs:
           ansible_ssh_private_key_file=~/.ssh/tcc_alisson_key
           ansible_ssh_common_args='-o StrictHostKeyChecking=no -o ProxyCommand="ssh -i ~/.ssh/tcc_alisson_key -o StrictHostKeyChecking=no -W %h:%p ubuntu@${{ needs.apply_infrastructure.outputs.bastion_ip }}"'
           EOF
-          
+
+          echo "Executando playbook de preparação do ambiente com Docker e Docker Compose..."
           ansible-playbook -i inventory.ini ../../../ansible/playbook_docker.yml -vvv
+
+          echo "Executando playbook de implantação do container do Nginx..."
+          ansible-playbook -i inventory.ini ../../../ansible/playbook_nginx_container.yml -vvv
               
       - name: 'Fechar Acesso Temporário do Ansible'
         if: always() # Garante que este passo sempre rode, mesmo que o anterior falhe
