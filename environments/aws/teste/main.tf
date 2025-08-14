@@ -29,7 +29,7 @@ module "security" {
 }
 
 # --- CAMADA 2.5: DNS PRIVADO ---
-# Cria a "lista telefónica" que só funciona dentro da VPC
+# Cria a "lista telefônica" que só funciona dentro da VPC
 resource "aws_route53_zone" "private" {
   count = var.create_environment ? 1 : 0
   name  = "internal.alissonlima.dev.br"
