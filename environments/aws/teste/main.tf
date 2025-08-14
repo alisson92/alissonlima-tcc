@@ -29,7 +29,7 @@ module "security" {
 }
 
 # --- CAMADA 2.5: DNS PRIVADO ---
-# Cria a "lista telefónica" que só funciona dentro da VPC
+# Cria a "lista telefônica" que só funciona dentro da VPC
 resource "aws_route53_zone" "private" {
   count = var.create_environment ? 1 : 0
   name  = "internal.alissonlima.dev.br"
@@ -90,6 +90,9 @@ module "load_balancer_teste" {
   public_subnet_ids = module.networking[0].public_subnet_ids # Passa a lista de sub-redes públicas
   sg_alb_id         = module.security[0].sg_alb_id
   environment       = "teste"
+
+    # --- LINHA ADICIONADA ---
+  certificate_arn   = "arn:aws:acm:us-east-1:531390799560:certificate/79ae68b0-3105-48af-939c-f521fe926823" # <-- ARN_DO_SEU_CERTIFICADO_AQUI
 }
 
 # --- CAMADA 7: CONEXÕES FINAIS ---

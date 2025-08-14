@@ -1,0 +1,18 @@
+---
+- name: Implantar o container do Nginx
+  hosts: app_servers # Vamos mirar apenas nos servidores de aplicação
+  become: true
+  tasks:
+    - name: Puxar a imagem mais recente do Nginx do Docker Hub
+      community.docker.docker_image:
+        name: nginx:latest
+        source: pull
+
+    - name: Iniciar o container do Nginx
+      community.docker.docker_container:
+        name: webserver
+        image: nginx:latest
+        state: started
+        restart_policy: always
+        ports:
+          - "80:80" # Mapeia a porta 80 do container para a porta 80 da VM
