@@ -17,3 +17,8 @@ variable "environment" {
   description = "Nome do ambiente (ex: teste)."
   type        = string
 }
+
+variable "certificate_arn" {
+  description = "ARN do certificado SSL do ACM para o listener HTTPS."
+  type        = string
+}
