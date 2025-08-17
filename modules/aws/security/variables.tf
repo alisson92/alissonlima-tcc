@@ -17,3 +17,9 @@ variable "my_ip" {
   description = "Seu endereco IP publico para permitir acesso SSH ao Bastion Host."
   type        = string
 }
+
+variable "tags" {
+  description = "Um mapa de tags para ser aplicado nos recursos da rede."
+  type        = map(string)
+  default     = {}
+}

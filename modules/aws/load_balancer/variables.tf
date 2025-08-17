@@ -22,3 +22,9 @@ variable "certificate_arn" {
   description = "ARN do certificado SSL do ACM para o listener HTTPS."
   type        = string
 }
+
+variable "tags" {
+  description = "Um mapa de tags para ser aplicado nos recursos da rede."
+  type        = map(string)
+  default     = {}
+}
