@@ -32,7 +32,7 @@ ssh ubuntu@app-server.teste.internal.alissonlima.dev.br
 ssh ubuntu@db-server.teste.internal.alissonlima.dev.br
 ```
 
-### Ambiente de Homologação (HOMOL)
+### Ambiente de Homologação - (HOMOL)
 
 ### 1. Conexão ao Bastion Host
 
@@ -58,7 +58,7 @@ ssh ubuntu@app-server.homol.internal.alissonlima.dev.br
 ssh ubuntu@db-server.homol.internal.alissonlima.dev.br
 ```
 
-### Ambiente de Produção (PROD)
+### Ambiente de Produção - (PROD)
 
 ### 1. Conexão ao Bastion Host
 
