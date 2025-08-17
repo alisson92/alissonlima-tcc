@@ -42,6 +42,7 @@ A infraestrutura provisionada na AWS segue um design de alta disponibilidade e s
 
 O projeto é organizado de forma modular para máxima reutilização e clareza:
 
+```bash
 ├── .github/workflows/    # Contém os pipelines de CI/CD (GitHub Actions)
 ├── ansible/              # Contém os playbooks de configuração do Ansible
 ├── environments/         # Onde a infraestrutura é efetivamente executada
@@ -54,6 +55,7 @@ O projeto é organizado de forma modular para máxima reutilização e clareza:
 │   │   ├── security/     # Módulo para criar os Security Groups
 │   │   └── ...           # Outros módulos
 └── ...
+```
 
 ## 🚀 Como Usar o Framework
 
