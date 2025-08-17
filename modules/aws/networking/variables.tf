@@ -12,3 +12,9 @@ variable "aws_region" {
   description = "Região da AWS para criar os recursos."
   type        = string
 }
+
+variable "tags" {
+  description = "Um mapa de tags para ser aplicado nos recursos da rede."
+  type        = map(string)
+  default     = {}
+}
