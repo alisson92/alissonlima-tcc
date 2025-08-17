@@ -9,7 +9,7 @@ resource "aws_ebs_volume" "db_data" {
     prevent_destroy = true
   }
 
-  tags = {
+  tags = merge(var.tags, {
     Name = "ebs-db-data-${var.environment}"
-  }
+  })
 }
