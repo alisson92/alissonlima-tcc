@@ -1,4 +1,6 @@
-name: 'Terraform TCC Pipeline'
+name: 'Gerenciamento de Infraestrutura AWS (IaC)'
+
+run-name: "${{ github.event.inputs.action == 'apply' && '🚀 Deploy' || '❌ Destroy' }} no ambiente [${{ github.event.inputs.environment }}] por @${{ github.actor }}"
 
 on:
   workflow_dispatch:
@@ -24,7 +26,7 @@ on:
 jobs:
   # <-- MUDANÇA: Jobs de apply e destroy unificados em um só.
   terraform_run:
-    name: 'Terraform Run (${{ github.event.inputs.action }} em ${{ github.event.inputs.environment }})'
+    name: "Terraform ${{ github.event.inputs.action == 'apply' && 'Apply ✅' || 'Destroy ❌' }} | Ambiente: ${{ github.event.inputs.environment }}"
     runs-on: ubuntu-latest
     
     outputs:
