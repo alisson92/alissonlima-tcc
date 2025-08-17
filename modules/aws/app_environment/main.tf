@@ -2,22 +2,22 @@
 # A AZ do servidor de aplicação pode ser gerenciada pela AWS para melhor distribuição.
 resource "aws_instance" "app_server" {
   ami                    = var.ami_id
-  instance_type          = var.instance_type_app
+  instance_type          = var.instance_type
   subnet_id              = var.private_subnet_id
   key_name               = var.key_name
   vpc_security_group_ids = [var.sg_application_id]
   disable_api_termination = true
 
-  tags = {
+  tags = merge(var.tags, {
     Name = "app-server-${var.environment}"
-  }
+  })
 }
 
 # --- Servidor de Banco de Dados ---
 # A AZ do servidor de banco é FIXADA para garantir que ele possa se conectar ao volume EBS existente.
 resource "aws_instance" "db_server" {
   ami                    = var.ami_id
-  instance_type          = var.instance_type_db
+  instance_type          = var.instance_type
   subnet_id              = var.private_subnet_id
   key_name               = var.key_name
   vpc_security_group_ids = [var.sg_application_id]
@@ -26,9 +26,9 @@ resource "aws_instance" "db_server" {
   # --- AJUSTE CRÍTICO ADICIONADO AQUI ---
   availability_zone      = var.db_server_availability_zone
 
-  tags = {
+  tags = merge(var.tags, {
     Name = "db-server-${var.environment}"
-  }
+  })
 }
 
 # --- Anexa o disco ao servidor de banco de dados ---
