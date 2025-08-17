@@ -33,3 +33,9 @@ variable "environment" {
   description = "Nome do ambiente (ex: teste)."
   type        = string
 }
+
+variable "tags" {
+  description = "Um mapa de tags para ser aplicado nos recursos da rede."
+  type        = map(string)
+  default     = {}
+}

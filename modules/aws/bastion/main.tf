@@ -5,10 +5,9 @@ resource "aws_instance" "bastion_host" {
   key_name               = var.key_name
   vpc_security_group_ids = [var.sg_bastion_id]
 
-  tags = {
-    # Ajustei o nome para ser mais consistente
-    Name = "bastion-host-${var.environment}" 
-  }
+  tags = merge(var.tags, {
+    Name = "bastion-host-${var.environment}"
+  })
 }
 
 # Adicione este recurso para criar o registro DNS
