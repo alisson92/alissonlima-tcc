@@ -13,7 +13,7 @@ resource "aws_instance" "bastion_host" {
 # Adicione este recurso para criar o registro DNS
 resource "aws_route53_record" "bastion_dns" {
   zone_id = var.zone_id
-  name    = "bastion.${var.domain_name}"
+  name    = "bastion-${var.environment}.${var.domain_name}"
   type    = "A"
   ttl     = 300
   records = [aws_instance.bastion_host.public_ip]
