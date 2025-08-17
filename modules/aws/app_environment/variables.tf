@@ -13,16 +13,9 @@ variable "sg_application_id" {
   type        = string
 }
 
-variable "instance_type_app" {
-  description = "Tipo da instancia EC2 para o servidor de aplicacao."
+variable "instance_type" { # <-- MANTIVEMOS APENAS A GENÉRICA
+  description = "Tipo da instancia EC2 para os servidores do ambiente."
   type        = string
-  default     = "t3.micro"
-}
-
-variable "instance_type_db" {
-  description = "Tipo da instancia EC2 para o servidor de banco de dados."
-  type        = string
-  default     = "t3.micro"
 }
 
 variable "ami_id" {
@@ -53,4 +46,10 @@ variable "private_domain_name" {
 variable "db_server_availability_zone" {
   description = "A Zona de Disponibilidade para o servidor de banco de dados, para alinhar com o volume EBS."
   type        = string
+}
+
+variable "tags" {
+  description = "Um mapa de tags para ser aplicado nos recursos."
+  type        = map(string)
+  default     = {}
 }
