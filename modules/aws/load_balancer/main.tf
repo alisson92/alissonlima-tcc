@@ -6,9 +6,9 @@ resource "aws_lb" "main" {
   security_groups    = [var.sg_alb_id]
   subnets            = var.public_subnet_ids
 
-  tags = {
+  tags = merge(var.tags, {
     Name = "alb-${var.environment}"
-  }
+  })
 }
 
 # Cria um "Target Group", que é o grupo de servidores para onde o tráfego será enviado
@@ -22,6 +22,10 @@ resource "aws_lb_target_group" "main" {
     path = "/"
     protocol = "HTTP"
   }
+
+    tags = merge(var.tags, {
+    Name = "tg-app-${var.environment}"
+  })
 }
 
 # Listener para a porta 80 (HTTP) que redireciona para HTTPS
