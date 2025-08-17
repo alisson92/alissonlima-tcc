@@ -76,7 +76,7 @@ jobs:
 
   # --- JOB 2: CONFIGURA OS SERVIDORES (Ansible) ---
   configure_servers:
-    name: 'Configurar Servidores (Ansible)'
+    name: 'Ansible Configure ⚙️ | Ambiente: ${{ github.event.inputs.environment }}'
     runs-on: ubuntu-latest
     # <-- MUDANÇA: 'needs' agora aponta para o job unificado.
     needs: terraform_run
