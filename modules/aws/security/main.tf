@@ -20,9 +20,9 @@ resource "aws_security_group" "bastion" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
-    Name = "sg-bastion-${var.environment}"
-  }
+  tags = merge(var.tags, {
+    Name = "bastion-${var.environment}"
+  })
 }
 
 # SG para nosso futuro Application Load Balancer (o porteiro de acesso da aplicacao)
@@ -53,9 +53,9 @@ resource "aws_security_group" "alb" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
-    Name = "sg-alb-${var.environment}"
-  }
+  tags = merge(var.tags, {
+    Name = "alb-${var.environment}"
+  })
 }
 
 # SG ÚNICO para a APLICACAO (agrupando App e DB)
@@ -96,7 +96,7 @@ resource "aws_security_group" "application" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags = {
-    Name = "sg-application-${var.environment}"
-  }
+  tags = merge(var.tags, {
+    Name = "application-${var.environment}"
+  })
 }
