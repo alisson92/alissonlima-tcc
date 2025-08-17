@@ -21,3 +21,8 @@ output "sg_bastion_id" {
   description = "ID do Security Group do Bastion Host."
   value       = var.create_environment ? module.security[0].sg_bastion_id : "N/A (ambiente destruído)"
 }
+
+output "alb_dns_name_output" {
+  description = "Endereço DNS do Application Load Balancer."
+  value       = var.create_environment ? "https://${var.alb_dns_name}.${data.aws_route53_zone.primary.name}" : "N/A (ambiente destruído)"
+}
