@@ -1,6 +1,6 @@
 # SG para o nosso futuro Bastion Host (o porteiro de acesso administrativo)
 resource "aws_security_group" "bastion" {
-  name        = "sg-bastion-${var.environment}"
+  name        = "bastion-${var.environment}"
   description = "Permite acesso SSH para o Bastion Host"
   vpc_id      = var.vpc_id
 
@@ -21,13 +21,13 @@ resource "aws_security_group" "bastion" {
   }
 
   tags = merge(var.tags, {
-    Name = "sg-bastion-${var.environment}"
+    Name = "bastion-${var.environment}"
   })
 }
 
 # SG para nosso futuro Application Load Balancer (o porteiro de acesso da aplicacao)
 resource "aws_security_group" "alb" {
-  name        = "sg-alb-${var.environment}"
+  name        = "alb-${var.environment}"
   description = "Permite trafego web para o Load Balancer"
   vpc_id      = var.vpc_id
 
@@ -54,13 +54,13 @@ resource "aws_security_group" "alb" {
   }
 
   tags = merge(var.tags, {
-    Name = "sg-alb-${var.environment}"
+    Name = "alb-${var.environment}"
   })
 }
 
 # SG ÚNICO para a APLICACAO (agrupando App e DB)
 resource "aws_security_group" "application" {
-  name        = "sg-application-${var.environment}"
+  name        = "application-${var.environment}"
   description = "Regras para os servidores da aplicacao (App e DB)"
   vpc_id      = var.vpc_id
 
@@ -97,6 +97,6 @@ resource "aws_security_group" "application" {
   }
 
   tags = merge(var.tags, {
-    Name = "sg-application-${var.environment}"
+    Name = "application-${var.environment}"
   })
 }
