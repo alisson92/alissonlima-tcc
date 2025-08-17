@@ -3,9 +3,10 @@ variable "environment" {
   type        = string
 }
 
-variable "private_subnet_id" {
-  description = "ID da sub-rede privada onde os servidores serao criados."
-  type        = string
+# <-- MUDANÇA: Substituído 'private_subnet_id' pela versão em lista 'private_subnet_ids'
+variable "private_subnet_ids" {
+  description = "LISTA de IDs das sub-redes privadas onde os servidores serão criados."
+  type        = list(string)
 }
 
 variable "sg_application_id" {
@@ -13,7 +14,7 @@ variable "sg_application_id" {
   type        = string
 }
 
-variable "instance_type" { # <-- MANTIVEMOS APENAS A GENÉRICA
+variable "instance_type" {
   description = "Tipo da instancia EC2 para os servidores do ambiente."
   type        = string
 }
@@ -52,4 +53,10 @@ variable "tags" {
   description = "Um mapa de tags para ser aplicado nos recursos."
   type        = map(string)
   default     = {}
+}
+
+variable "app_server_count" {
+  description = "O número de servidores de aplicação a serem criados para alta disponibilidade."
+  type        = number
+  default     = 1
 }
