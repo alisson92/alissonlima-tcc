@@ -36,7 +36,7 @@ ssh ubuntu@db-server.internal.alissonlima.dev.br
 
 ### 1. Conexão ao Bastion Host
 
-O processo é o mesmo, mas utilizando o DNS específico de homologação.
+O processo é o mesmo, mas utilizando o DNS específico de Homologação.
 
 ```bash
 ssh -A ubuntu@bastion-homol.alissonlima.dev.br
@@ -61,6 +61,8 @@ ssh ubuntu@db-server.internal.alissonlima.dev.br
 ### Ambiente de Produção - (PROD)
 
 ### 1. Conexão ao Bastion Host
+
+O processo é o mesmo, mas utilizando o DNS específico de Produção.
 
 ```bash
 ssh -A ubuntu@bastion-prod.alissonlima.dev.br
