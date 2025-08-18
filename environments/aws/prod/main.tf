@@ -1,5 +1,5 @@
 # =====================================================================
-#   ENVIRONMENTS/HOMOL/MAIN.TF - VERSÃO CORRIGIDA E CONSISTENTE
+#   ENVIRONMENTS/PROD/MAIN.TF - VERSÃO CORRIGIDA E FINAL PARA HA
 # =====================================================================
 
 provider "aws" {
@@ -49,16 +49,12 @@ module "data_storage" {
   tags                        = var.tags
 }
 
-# --- CAMADA 4: COMPUTAÇÃO (Servidores) ---
+# --- CAMADA 4: COMPUTAÇÃO (Servidores) E ANEXO AO LOAD BALANCER ---
 module "app_environment" {
-  count = var.create_environment ? 1 : 0
+  count                     = var.create_environment ? 1 : 0
   source                    = "../../../modules/aws/app_environment"
-  
-  # Como 'homol' só tem 1 servidor (por padrão), não precisamos passar 'app_server_count'.
-  
-  # <-- CORREÇÃO: Passando a LISTA completa de sub-redes.
+  app_server_count          = 2
   private_subnet_ids        = module.networking[0].private_subnet_ids
-
   environment               = var.environment_name
   instance_type             = var.instance_type
   sg_application_id         = module.security[0].sg_application_id
@@ -69,6 +65,14 @@ module "app_environment" {
   private_zone_id           = aws_route53_zone.private[0].zone_id
   private_domain_name       = aws_route53_zone.private[0].name
   tags                      = var.tags
+}
+
+# Este é o local correto para o anexo, logo após a criação dos servidores.
+resource "aws_lb_target_group_attachment" "app_server" {
+  count            = var.create_environment ? 2 : 0
+  target_group_arn = module.load_balancer[0].target_group_arn
+  target_id        = module.app_environment[0].app_server_ids[count.index]
+  port             = 80
 }
 
 # --- CAMADA 5: PONTO DE ACESSO (BASTION) ---
@@ -97,15 +101,8 @@ module "load_balancer" {
   tags              = var.tags
 }
 
-# --- CAMADA 7: CONEXÕES FINAIS ---
-resource "aws_lb_target_group_attachment" "app_server" {
-  count            = var.create_environment ? 1 : 0
-  target_group_arn = module.load_balancer[0].target_group_arn
-  # <-- CORREÇÃO: Usando a saída de lista 'app_server_ids' e pegando o primeiro (e único) item.
-  target_id        = module.app_environment[0].app_server_ids[0]
-  port             = 80
-}
-
+# --- CAMADA 7: DNS PÚBLICO DA APLICAÇÃO ---
+# O 'target_group_attachment' foi movido para a CAMADA 4.
 resource "aws_route53_record" "app_dns" {
   count   = var.create_environment ? 1 : 0
   zone_id = data.aws_route53_zone.primary.zone_id
