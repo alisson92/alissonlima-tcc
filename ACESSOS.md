@@ -70,15 +70,15 @@ ssh -A ubuntu@bastion-prod.alissonlima.dev.br
 
 ### 2. Conexão aos Servidores Internos (a partir do Bastion)
 
-### Acessar os Servidores de Aplicação
+Uma vez dentro do Bastion de homologação, use os respectivos endereços de DNS privados.
 
-### Acessar o PRIMEIRO Servidor de Aplicação (Nó 0)
+### Acessar o Primeiro Servidor de Aplicação (Nó 0)
 
 ```bash
 ssh ubuntu@app-server-0.internal.alissonlima.dev.br
 ```
 
-### Acessar o SEGUNDO Servidor de Aplicação (Nó 1)
+### Acessar o Segundo Servidor de Aplicação (Nó 1)
 
 ```bash
 ssh ubuntu@app-server-1.internal.alissonlima.dev.br
