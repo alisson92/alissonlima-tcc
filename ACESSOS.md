@@ -20,13 +20,13 @@ ssh -A ubuntu@bastion-teste.alissonlima.dev.br
 
 Uma vez dentro do Bastion, use os endereços de DNS privados para acessar os servidores.
 
-# Acessar o Servidor de Aplicação
+### Acessar o Servidor de Aplicação
 
 ```bash
 ssh ubuntu@app-server.internal.alissonlima.dev.br
 ```
 
-# Acessar o Servidor de Banco de Dados
+### Acessar o Servidor de Banco de Dados
 
 ```bash
 ssh ubuntu@db-server.internal.alissonlima.dev.br
@@ -46,13 +46,13 @@ ssh -A ubuntu@bastion-homol.alissonlima.dev.br
 
 Uma vez dentro do Bastion de homologação, use os respectivos endereços de DNS privados.
 
-# Acessar o Servidor de Aplicação
+### Acessar o Servidor de Aplicação
 
 ```bash
 ssh ubuntu@app-server.internal.alissonlima.dev.br
 ```
 
-# Acessar o Servidor de Banco de Dados
+### Acessar o Servidor de Banco de Dados
 
 ```bash
 ssh ubuntu@db-server.internal.alissonlima.dev.br
@@ -68,21 +68,21 @@ ssh -A ubuntu@bastion-prod.alissonlima.dev.br
 
 ### 2. Conexão aos Servidores Internos (a partir do Bastion)
 
-# Acessar os Servidores de Aplicação
+### Acessar os Servidores de Aplicação
 
-# Acessar o PRIMEIRO Servidor de Aplicação (Nó 0)
+### Acessar o PRIMEIRO Servidor de Aplicação (Nó 0)
 
 ```bash
 ssh ubuntu@app-server-0.internal.alissonlima.dev.br
 ```
 
-# Acessar o SEGUNDO Servidor de Aplicação (Nó 1)
+### Acessar o SEGUNDO Servidor de Aplicação (Nó 1)
 
 ```bash
 ssh ubuntu@app-server-1.internal.alissonlima.dev.br
 ```
 
-# Acessar o Servidor de Banco de Dados
+### Acessar o Servidor de Banco de Dados
 
 ```bash
 ssh ubuntu@db-server.internal.alissonlima.dev.br
