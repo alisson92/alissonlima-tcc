@@ -1,5 +1,5 @@
 # =====================================================================
-#   ENVIRONMENTS/HOMOL/OUTPUTS.TF - VERSÃO CORRIGIDA E CONSISTENTE
+#   ENVIRONMENTS/PROD/OUTPUTS.TF - VERSÃO CORRIGIDA E CONSISTENTE
 # =====================================================================
 
 output "bastion_public_ip" {
