@@ -43,3 +43,9 @@ variable "my_ip" {
   description = "IP pessoal para liberação de acesso SSH no Bastion Host."
   type        = string
 }
+
+variable "app_server_count" {
+  description = "Número de servidores de aplicação para este ambiente."
+  type        = number
+  default     = 1 # Padrão seguro para ambientes não-produtivos.
+}
