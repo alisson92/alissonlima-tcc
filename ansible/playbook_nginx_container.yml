@@ -2,34 +2,25 @@
   hosts: app_servers
   become: yes
   vars:
-    # Esta variável será passada pelo pipeline do GitHub Actions
-    environment_name: "default" 
+    environment_name: "default"
+    # Define um caminho fixo e conhecido para o nosso conteúdo web
+    web_content_dir: "/opt/nginx/html"
 
   tasks:
-    - name: Create a temporary directory for the HTML file
-      ansible.builtin.tempfile:
-        state: directory
-        prefix: nginx_html_
-      register: temp_html_dir
-
-    # <-- MUDANÇA: Adicionada nova tarefa para corrigir as permissões.
-    - name: Ensure the temporary directory is world-readable
+    - name: Ensure the web content directory exists
       ansible.builtin.file:
-        path: "{{ temp_html_dir.path }}"
+        path: "{{ web_content_dir }}"
         state: directory
         mode: '0755'
 
     - name: Render the custom index.html from template
       ansible.builtin.template:
         src: templates/index.html.j2
-        dest: "{{ temp_html_dir.path }}/index.html"
+        dest: "{{ web_content_dir }}/index.html"
         owner: root
         group: root
         mode: '0644'
       vars:
-        # Passa as variáveis para o template.
-        # 'environment_name' já está definida no 'vars' do playbook.
-        # 'url_prefix' será o mesmo que o nome do ambiente, exceto para 'prod'.
         url_prefix: "{{ 'app' if environment_name == 'prod' else environment_name }}"
 
     - name: Stop and remove existing nginx container if it exists
@@ -47,10 +38,5 @@
         ports:
           - "80:80"
         volumes:
-          - "{{ temp_html_dir.path }}:/usr/share/nginx/html:ro"
-
-    - name: Clean up the temporary directory
-      ansible.builtin.file:
-        path: "{{ temp_html_dir.path }}"
-        state: absent
-      when: temp_html_dir.path is defined
+          # <-- MUDANÇA CRÍTICA: Usando o diretório dedicado e a flag de contexto ':z'
+          - "{{ web_content_dir }}:/usr/share/nginx/html:ro,z"
