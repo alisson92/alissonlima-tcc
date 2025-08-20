@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Status do Ambiente</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #1e3a8a, #3b0764);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="gradient-bg text-white min-h-screen flex items-center justify-center p-4">
+
+    <div class="w-full max-w-2xl glass-card rounded-2xl shadow-2xl p-8 md:p-12 text-center transform hover:scale-105 transition-transform duration-500">
+        
+        <!-- Cabeçalho -->
+        <header class="mb-8">
+            <div class="inline-block bg-blue-500/80 text-white text-sm font-bold px-4 py-2 rounded-full mb-4">
+                <!-- O Ansible vai substituir esta variável pelo nome do ambiente -->
+                Ambiente {{ environment_name | upper }}
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight">Framework de Automação IaC</h1>
+            <p class="text-blue-200 mt-2">Infraestrutura provisionada com sucesso!</p>
+        </header>
+
+        <!-- Corpo com Informações -->
+        <main class="text-left bg-black/20 p-6 rounded-lg border border-white/20">
+            <h2 class="text-xl font-bold mb-4 border-b border-blue-400/50 pb-2">Detalhes do Servidor</h2>
+            <div class="space-y-3 text-blue-100">
+                <div class="flex justify-between">
+                    <span class="font-semibold text-white">Hostname do Servidor:</span>
+                    <!-- O Ansible vai substituir esta variável pelo hostname -->
+                    <span>{{ ansible_hostname }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="font-semibold text-white">Endereço IP Privado:</span>
+                    <!-- O Ansible vai substituir esta variável pelo IP -->
+                    <span>{{ ansible_default_ipv4.address }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="font-semibold text-white">Provisionado em:</span>
+                    <span id="provision-time"></span>
+                </div>
+                 <div class="flex justify-between">
+                    <span class="font-semibold text-white">URL de Acesso:</span>
+                    <!-- O Ansible vai substituir esta variável pela URL -->
+                    <a href="https://{{ url_prefix }}.alissonlima.dev.br" class="text-blue-300 hover:underline">https://{{ url_prefix }}.alissonlima.dev.br</a>
+                </div>
+            </div>
+        </main>
+
+        <!-- Rodapé -->
+        <footer class="mt-8">
+            <p class="text-xs text-blue-300">Projeto de TCC - Alisson Lima - 2025</p>
+        </footer>
+
+    </div>
+
+    <script>
+        // Pequeno script para exibir a data e hora formatadas
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const provisionTimeEl = document.getElementById('provision-time');
+            const now = new Date();
+            const options = { 
+                year: 'numeric', month: 'long', day: 'numeric', 
+                hour: '2-digit', minute: '2-digit', second: '2-digit',
+                timeZoneName: 'short' 
+            };
+            provisionTimeEl.textContent = new Intl.DateTimeFormat('pt-BR', options).format(now);
+        });
+    </script>
+
+</body>
+</html>
