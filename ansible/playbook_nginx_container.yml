@@ -21,7 +21,7 @@
         group: root
         mode: '0644'
       vars:
-        url_prefix: "{{ 'app' if environment_name == 'prod' else environment_name }}"
+        url_prefix: "{{ environment_name }}"
 
     - name: Stop and remove existing nginx container if it exists
       community.docker.docker_container:
