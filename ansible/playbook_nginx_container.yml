@@ -40,7 +40,7 @@
         ports:
           - "80:80"
         volumes:
-          - "{{ temp_html_dir.path }}:/var/www/html:ro"
+          - "{{ temp_html_dir.path }}:/usr/share/nginx/html:ro"
 
     - name: Clean up the temporary directory
       ansible.builtin.file:
