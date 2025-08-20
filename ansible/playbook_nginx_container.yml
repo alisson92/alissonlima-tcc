@@ -12,6 +12,13 @@
         prefix: nginx_html_
       register: temp_html_dir
 
+    # <-- MUDANÇA: Adicionada nova tarefa para corrigir as permissões.
+    - name: Ensure the temporary directory is world-readable
+      ansible.builtin.file:
+        path: "{{ temp_html_dir.path }}"
+        state: directory
+        mode: '0755'
+
     - name: Render the custom index.html from template
       ansible.builtin.template:
         src: templates/index.html.j2
