@@ -1,18 +1,49 @@
----
-- name: Implantar o container do Nginx
-  hosts: app_servers # Vamos mirar apenas nos servidores de aplicação
-  become: true
-  tasks:
-    - name: Puxar a imagem mais recente do Nginx do Docker Hub
-      community.docker.docker_image:
-        name: nginx:latest
-        source: pull
+- name: Deploy Custom Nginx Welcome Page
+  hosts: app_servers
+  become: yes
+  vars:
+    # Esta variável será passada pelo pipeline do GitHub Actions
+    environment_name: "default" 
 
-    - name: Iniciar o container do Nginx
+  tasks:
+    - name: Create a temporary directory for the HTML file
+      ansible.builtin.tempfile:
+        state: directory
+        prefix: nginx_html_
+      register: temp_html_dir
+
+    - name: Render the custom index.html from template
+      ansible.builtin.template:
+        src: templates/index.html.j2
+        dest: "{{ temp_html_dir.path }}/index.html"
+        owner: root
+        group: root
+        mode: '0644'
+      vars:
+        # Passa as variáveis para o template.
+        # 'environment_name' já está definida no 'vars' do playbook.
+        # 'url_prefix' será o mesmo que o nome do ambiente, exceto para 'prod'.
+        url_prefix: "{{ 'app' if environment_name == 'prod' else environment_name }}"
+
+    - name: Stop and remove existing nginx container if it exists
       community.docker.docker_container:
-        name: webserver
+        name: nginx-web
+        state: absent
+      ignore_errors: yes
+
+    - name: Deploy Nginx container with the custom page
+      community.docker.docker_container:
+        name: nginx-web
         image: nginx:latest
         state: started
         restart_policy: always
         ports:
-          - "80:80" # Mapeia a porta 80 do container para a porta 80 da VM
+          - "80:80"
+        volumes:
+          - "{{ temp_html_dir.path }}:/var/www/html:ro"
+
+    - name: Clean up the temporary directory
+      ansible.builtin.file:
+        path: "{{ temp_html_dir.path }}"
+        state: absent
+      when: temp_html_dir.path is defined
