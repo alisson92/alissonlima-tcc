@@ -135,7 +135,7 @@ jobs:
           ansible-playbook -i inventory.ini ../../../ansible/playbook_docker.yml -vvv
 
           echo "Executando playbook de implantação do container do Nginx..."
-          ansible-playbook -i inventory.ini ../../../ansible/playbook_nginx_container.yml -vvv
+          ansible-playbook -i inventory.ini ../../../ansible/playbook_nginx_container.yml -e "environment_name=${{ github.event.inputs.environment }}" -vvv
         working-directory: ./environments/aws/${{ github.event.inputs.environment }}
               
       - name: 'Fechar Acesso Temporário do Ansible'
