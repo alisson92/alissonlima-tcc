@@ -1,18 +1,42 @@
----
-- name: Implantar o container do Nginx
-  hosts: app_servers # Vamos mirar apenas nos servidores de aplicação
-  become: true
-  tasks:
-    - name: Puxar a imagem mais recente do Nginx do Docker Hub
-      community.docker.docker_image:
-        name: nginx:latest
-        source: pull
+- name: Deploy Custom Nginx Welcome Page
+  hosts: app_servers
+  become: yes
+  vars:
+    environment_name: "default"
+    # Define um caminho fixo e conhecido para o nosso conteúdo web
+    web_content_dir: "/opt/nginx/html"
 
-    - name: Iniciar o container do Nginx
+  tasks:
+    - name: Ensure the web content directory exists
+      ansible.builtin.file:
+        path: "{{ web_content_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Render the custom index.html from template
+      ansible.builtin.template:
+        src: templates/index.html.j2
+        dest: "{{ web_content_dir }}/index.html"
+        owner: root
+        group: root
+        mode: '0644'
+      vars:
+        url_prefix: "{{ environment_name }}"
+
+    - name: Stop and remove existing nginx container if it exists
       community.docker.docker_container:
-        name: webserver
+        name: nginx-web
+        state: absent
+      ignore_errors: yes
+
+    - name: Deploy Nginx container with the custom page
+      community.docker.docker_container:
+        name: nginx-web
         image: nginx:latest
         state: started
         restart_policy: always
         ports:
-          - "80:80" # Mapeia a porta 80 do container para a porta 80 da VM
+          - "80:80"
+        volumes:
+          # <-- MUDANÇA CRÍTICA: Usando o diretório dedicado e a flag de contexto ':z'
+          - "{{ web_content_dir }}:/usr/share/nginx/html:ro,z"
