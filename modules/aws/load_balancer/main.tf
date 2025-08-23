@@ -23,6 +23,12 @@ resource "aws_lb_target_group" "main" {
     protocol = "HTTP"
   }
 
+  stickiness {
+    type            = "lb_cookie"
+    cookie_duration = 1 # Duração do cookie de sessão em segundos. 1 segundo é ideal para demonstração.
+    enabled         = true
+  }
+
     tags = merge(var.tags, {
     Name = "tg-app-${var.environment}"
   })
