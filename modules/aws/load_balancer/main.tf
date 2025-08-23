@@ -26,7 +26,7 @@ resource "aws_lb_target_group" "main" {
   stickiness {
     type            = "lb_cookie"
     cookie_duration = 1 # Duração do cookie de sessão em segundos. 1 segundo é ideal para demonstração.
-    enabled         = true
+    enabled         = false
   }
 
     tags = merge(var.tags, {
