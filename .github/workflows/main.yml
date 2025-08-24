@@ -20,6 +20,12 @@ on:
         options:
           - apply
           - destroy
+          - force-unlock # <-- MUDANÇA: Adicionada a ação de emergência
+      
+      # <-- MUDANÇA: Adicionado campo para o Lock ID, que só aparece quando a ação é force-unlock
+      lock_id:
+        description: 'Cole o Lock ID do erro (necessário apenas para force-unlock)'
+        required: false
 
 jobs:
   terraform_run:
@@ -49,6 +55,12 @@ jobs:
 
       - name: 'Terraform Init'
         run: terraform init
+        working-directory: ./environments/aws/${{ github.event.inputs.environment }}
+
+      # <-- MUDANÇA: Adicionado novo step para o desbloqueio forçado
+      - name: 'Terraform Force Unlock'
+        if: github.event.inputs.action == 'force-unlock' && github.event.inputs.lock_id != ''
+        run: terraform force-unlock -force ${{ github.event.inputs.lock_id }}
         working-directory: ./environments/aws/${{ github.event.inputs.environment }}
 
       - name: 'Terraform Apply'
