@@ -94,7 +94,7 @@ jobs:
           NSG_NAME="nsg-bastion-${{ github.event.inputs.environment }}"
           RG_NAME="${{ needs.terraform_azure.outputs.rg_name }}"
           az network nsg rule create --resource-group $RG_NAME --nsg-name $NSG_NAME \
-            --name AllowRunnerSSH --priority 100 --direction Inbound --access Allow \
+            --name AllowRunnerSSH --priority 110 --direction Inbound --access Allow \
             --protocol Tcp --source-address-prefixes $RUNNER_IP --source-port-ranges '*' \
             --destination-address-prefixes '*' --destination-port-ranges 22
 
