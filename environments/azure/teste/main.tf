@@ -1,5 +1,5 @@
 # =====================================================================
-#   ENVIRONMENTS/AZURE/TESTE/MAIN.TF - VERSÃO CONSISTENTE TCC
+#   ENVIRONMENTS/AZURE/TESTE/MAIN.TF - VERSÃO MULTICLOUD ATUALIZADA
 # =====================================================================
 
 # --- CAMADA 0: RESOURCE GROUP (Obrigatório na Azure) ---
@@ -35,7 +35,7 @@ module "security" {
   tags                = var.tags
 }
 
-# --- CAMADA 2.5: DNS PRIVADO (Equivalente ao Route 53 Private) ---
+# --- CAMADA 2.5: DNS PRIVADO (Interno Azure) ---
 resource "azurerm_private_dns_zone" "internal" {
   count               = var.create_environment ? 1 : 0
   name                = var.private_dns_zone_name
@@ -52,11 +52,11 @@ resource "azurerm_private_dns_zone_virtual_network_link" "main" {
 
 # --- CAMADA 3: ARMAZENAMENTO PERSISTENTE ---
 module "data_storage" {
+  count               = var.create_environment ? 1 : 0
   source              = "../../../modules/azure/data_storage"
-  resource_group_name = var.create_environment ? azurerm_resource_group.main[0].name : "dummy"
-  location            = var.create_environment ? azurerm_resource_group.main[0].location : "East US"
+  resource_group_name = azurerm_resource_group.main[0].name
+  location            = azurerm_resource_group.main[0].location
   environment         = var.environment_name
-  # A lógica de persistência (persist_db_volume) deve ser tratada dentro do módulo via prevent_destroy se necessário
   tags                = var.tags
 }
 
@@ -71,13 +71,13 @@ module "app_environment" {
   vm_size               = var.instance_type
   admin_username        = "adminuser"
   public_key            = var.public_key
-  db_disk_id            = module.data_storage.db_disk_id
+  db_disk_id            = module.data_storage[0].db_disk_id # Adicionado [0]
   private_dns_zone_name = azurerm_private_dns_zone.internal[0].name
   app_server_count      = var.app_server_count
   tags                  = var.tags
 }
 
-# --- CAMADA 5: PONTO DE ACESSO (BASTION) ---
+# --- CAMADA 5: PONTO DE ACESSO (BASTION) COM DNS AWS ---
 module "bastion_host" {
   count               = var.create_environment ? 1 : 0
   source              = "../../../modules/azure/bastion"
@@ -89,6 +89,8 @@ module "bastion_host" {
   domain_name         = "alissonlima.dev.br" 
   environment         = var.environment_name
   tags                = var.tags
+  
+  # O provedor AWS será herdado automaticamente do arquivo providers.tf
 }
 
 # --- CAMADA 6: PONTO DE ENTRADA DA APLICAÇÃO (Load Balancer) ---
@@ -102,7 +104,6 @@ module "load_balancer" {
 }
 
 # --- CAMADA 7: CONEXÕES FINAIS (Associação NIC -> Load Balancer) ---
-# No Azure, a conexão é feita associando a NIC da VM ao Backend Pool do LB
 resource "azurerm_network_interface_backend_address_pool_association" "app_pool_assoc" {
   count                   = var.create_environment ? var.app_server_count : 0
   network_interface_id    = module.app_environment[0].app_server_nic_ids[count.index]
