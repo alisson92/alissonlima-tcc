@@ -107,5 +107,5 @@ resource "azurerm_network_interface_backend_address_pool_association" "app_pool_
   count                   = var.create_environment ? var.app_server_count : 0
   network_interface_id    = module.app_environment[0].app_server_nic_ids[count.index]
   ip_configuration_name   = "internal"
-  backend_address_pool_id = module.load_balancer[0].lb_backend_pool_id
+  backend_address_pool_id = module.load_balancer[0].backend_pool_id
 }
