@@ -1,0 +1,111 @@
+# =====================================================================
+#   ENVIRONMENTS/AZURE/TESTE/MAIN.TF - VERSÃO CONSISTENTE TCC
+# =====================================================================
+
+# --- CAMADA 0: RESOURCE GROUP (Obrigatório na Azure) ---
+resource "azurerm_resource_group" "main" {
+  count    = var.create_environment ? 1 : 0
+  name     = "rg-tcc-${var.environment_name}"
+  location = var.location
+  tags     = var.tags
+}
+
+# --- CAMADA 1: REDE ---
+module "networking" {
+  count               = var.create_environment ? 1 : 0
+  source              = "../../../modules/azure/networking"
+  resource_group_name = azurerm_resource_group.main[0].name
+  location            = azurerm_resource_group.main[0].location
+  environment         = var.environment_name
+  vnet_cidr_block     = var.vnet_cidr_block
+  tags                = var.tags
+}
+
+# --- CAMADA 2: SEGURANÇA ---
+module "security" {
+  count               = var.create_environment ? 1 : 0
+  source              = "../../../modules/azure/security"
+  resource_group_name = azurerm_resource_group.main[0].name
+  location            = azurerm_resource_group.main[0].location
+  environment         = var.environment_name
+  vnet_cidr_block     = var.vnet_cidr_block
+  my_ip               = var.my_ip
+  public_subnet_ids   = module.networking[0].public_subnet_ids
+  private_subnet_ids  = module.networking[0].private_subnet_ids
+  tags                = var.tags
+}
+
+# --- CAMADA 2.5: DNS PRIVADO (Equivalente ao Route 53 Private) ---
+resource "azurerm_private_dns_zone" "internal" {
+  count               = var.create_environment ? 1 : 0
+  name                = var.private_dns_zone_name
+  resource_group_name = azurerm_resource_group.main[0].name
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "main" {
+  count                 = var.create_environment ? 1 : 0
+  name                  = "link-dns-${var.environment_name}"
+  resource_group_name   = azurerm_resource_group.main[0].name
+  private_dns_zone_name = azurerm_private_dns_zone.internal[0].name
+  virtual_network_id    = module.networking[0].vnet_id
+}
+
+# --- CAMADA 3: ARMAZENAMENTO PERSISTENTE ---
+module "data_storage" {
+  source              = "../../../modules/azure/data_storage"
+  resource_group_name = var.create_environment ? azurerm_resource_group.main[0].name : "dummy"
+  location            = var.create_environment ? azurerm_resource_group.main[0].location : "East US"
+  environment         = var.environment_name
+  # A lógica de persistência (persist_db_volume) deve ser tratada dentro do módulo via prevent_destroy se necessário
+  tags                = var.tags
+}
+
+# --- CAMADA 4: COMPUTAÇÃO (Servidores) ---
+module "app_environment" {
+  count                 = var.create_environment ? 1 : 0
+  source                = "../../../modules/azure/app_environment"
+  resource_group_name   = azurerm_resource_group.main[0].name
+  location              = azurerm_resource_group.main[0].location
+  environment           = var.environment_name
+  private_subnet_ids    = module.networking[0].private_subnet_ids
+  vm_size               = var.instance_type
+  admin_username        = "adminuser"
+  public_key            = var.public_key
+  db_disk_id            = module.data_storage.db_disk_id
+  private_dns_zone_name = azurerm_private_dns_zone.internal[0].name
+  app_server_count      = var.app_server_count
+  tags                  = var.tags
+}
+
+# --- CAMADA 5: PONTO DE ACESSO (BASTION) ---
+module "bastion_host" {
+  count               = var.create_environment ? 1 : 0
+  source              = "../../../modules/azure/bastion"
+  resource_group_name = azurerm_resource_group.main[0].name
+  location            = azurerm_resource_group.main[0].location
+  public_subnet_id    = module.networking[0].public_subnet_ids[0]
+  admin_username      = "adminuser"
+  public_key          = var.public_key
+  domain_name         = "alissonlima.dev.br" 
+  environment         = var.environment_name
+  tags                = var.tags
+}
+
+# --- CAMADA 6: PONTO DE ENTRADA DA APLICAÇÃO (Load Balancer) ---
+module "load_balancer" {
+  count               = var.create_environment ? 1 : 0
+  source              = "../../../modules/azure/load_balancer"
+  resource_group_name = azurerm_resource_group.main[0].name
+  location            = azurerm_resource_group.main[0].location
+  environment         = var.environment_name
+  tags                = var.tags
+}
+
+# --- CAMADA 7: CONEXÕES FINAIS (Associação NIC -> Load Balancer) ---
+# No Azure, a conexão é feita associando a NIC da VM ao Backend Pool do LB
+resource "azurerm_network_interface_backend_address_pool_association" "app_pool_assoc" {
+  count                   = var.create_environment ? var.app_server_count : 0
+  network_interface_id    = module.app_environment[0].app_server_nic_ids[count.index]
+  ip_configuration_name   = "internal"
+  backend_address_pool_id = module.load_balancer[0].lb_backend_pool_id
+}

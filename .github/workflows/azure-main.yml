@@ -1,0 +1,127 @@
+name: 'Gerenciamento de Infraestrutura Azure (IaC)'
+
+run-name: "${{ github.event.inputs.action == 'apply' && '🚀 Deploy Azure' || '❌ Destroy Azure' }} [${{ github.event.inputs.environment }}] por @${{ github.actor }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Ambiente Azure'
+        required: true
+        type: choice
+        options: [teste, homol, prod]
+      action:
+        description: 'Ação: apply ou destroy'
+        required: true
+        type: choice
+        options: [apply, destroy]
+
+# O Terraform continuará lendo estas envs "na boa"
+env:
+  ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+
+jobs:
+  terraform_azure:
+    name: "Terraform Azure | ${{ github.event.inputs.environment }}"
+    runs-on: ubuntu-latest
+
+    outputs:
+      app_server_ips: ${{ steps.outputs.outputs.app_server_private_ips }}
+      db_server_ip: ${{ steps.outputs.outputs.db_server_private_ip }}
+      bastion_ip: ${{ steps.outputs.outputs.bastion_public_ip }}
+      rg_name: "rg-tcc-${{ github.event.inputs.environment }}"
+
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+
+      # --- AQUI ESTÁ A CORREÇÃO ---
+      - name: 'Azure Login'
+        uses: azure/login@v2
+        with:
+          creds: '{"clientId":"${{ secrets.ARM_CLIENT_ID }}","clientSecret":"${{ secrets.ARM_CLIENT_SECRET }}","subscriptionId":"${{ secrets.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.ARM_TENANT_ID }}"}'
+
+      - name: 'Setup Terraform'
+        uses: hashicorp/setup-terraform@v3
+
+      - name: 'Terraform Init'
+        run: terraform init
+        working-directory: ./environments/azure/${{ github.event.inputs.environment }}
+
+      - name: 'Terraform Action'
+        run: |
+          if [ "${{ github.event.inputs.action }}" == "apply" ]; then
+            terraform apply -auto-approve -var="create_environment=true"
+          else
+            terraform apply -auto-approve -var="create_environment=false"
+          fi
+        working-directory: ./environments/azure/${{ github.event.inputs.environment }}
+
+      - name: 'Get Outputs'
+        if: github.event.inputs.action == 'apply'
+        id: outputs
+        run: |
+          echo "app_server_private_ips=$(terraform output -json app_server_private_ips)" >> $GITHUB_OUTPUT
+          echo "db_server_private_ip=$(terraform output -raw db_server_private_ip)" >> $GITHUB_OUTPUT
+          echo "bastion_public_ip=$(terraform output -raw bastion_public_ip)" >> $GITHUB_OUTPUT
+        working-directory: ./environments/azure/${{ github.event.inputs.environment }}
+
+  configure_azure_servers:
+    name: 'Ansible Azure ⚙️'
+    needs: terraform_azure
+    runs-on: ubuntu-latest
+    if: needs.terraform_azure.result == 'success' && github.event.inputs.action == 'apply'
+
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+
+      # Correção também aplicada no segundo job
+      - name: 'Azure Login'
+        uses: azure/login@v2
+        with:
+          creds: '{"clientId":"${{ secrets.ARM_CLIENT_ID }}","clientSecret":"${{ secrets.ARM_CLIENT_SECRET }}","subscriptionId":"${{ secrets.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.ARM_TENANT_ID }}"}'
+
+      - name: 'Abrir SSH no NSG do Bastion'
+        run: |
+          RUNNER_IP=$(curl -s ifconfig.me)
+          NSG_NAME="nsg-bastion-${{ github.event.inputs.environment }}"
+          RG_NAME="${{ needs.terraform_azure.outputs.rg_name }}"
+          az network nsg rule create --resource-group $RG_NAME --nsg-name $NSG_NAME \
+            --name AllowRunnerSSH --priority 100 --direction Inbound --access Allow \
+            --protocol Tcp --source-address-prefixes $RUNNER_IP --source-port-ranges '*' \
+            --destination-address-prefixes '*' --destination-port-ranges 22
+
+      - name: 'Configurar com Ansible'
+        run: |
+          sudo apt-get update && sudo apt-get install -y ansible jq
+          mkdir -p ~/.ssh
+          echo "${{ secrets.TCC_ALISSON_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          
+          echo "[app_servers]" > inventory.ini
+          echo '${{ needs.terraform_azure.outputs.app_server_ips }}' | jq -r '.[]' | while read ip; do
+            echo "app_server_${ip//./_} ansible_host=$ip" >> inventory.ini
+          done
+
+          cat <<EOF >> inventory.ini
+          [db_servers]
+          db-server ansible_host=${{ needs.terraform_azure.outputs.db_server_ip }}
+          [all:vars]
+          ansible_user=adminuser
+          ansible_ssh_private_key_file=~/.ssh/id_rsa
+          ansible_ssh_common_args='-o StrictHostKeyChecking=no -o ProxyCommand="ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -W %h:%p adminuser@${{ needs.terraform_azure.outputs.bastion_ip }}"'
+          EOF
+          
+          ansible-playbook -i inventory.ini ../../../ansible/playbook_docker.yml -vvv
+          ansible-playbook -i inventory.ini ../../../ansible/playbook_nginx_container.yml -e "environment_name=${{ github.event.inputs.environment }}" -vvv
+        working-directory: ./environments/azure/${{ github.event.inputs.environment }}
+
+      - name: 'Fechar SSH no NSG'
+        if: always()
+        run: |
+          az network nsg rule delete --resource-group ${{ needs.terraform_azure.outputs.rg_name }} \
+            --nsg-name nsg-bastion-${{ github.event.inputs.environment }} --name AllowRunnerSSH
