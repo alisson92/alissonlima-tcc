@@ -110,3 +110,9 @@ resource "azurerm_network_interface_backend_address_pool_association" "app_pool_
   ip_configuration_name   = "internal"
   backend_address_pool_id = module.load_balancer[0].backend_pool_id
 }
+
+# Avisa ao Terraform que o módulo mudou de endereço no estado
+moved {
+  from = module.data_storage
+  to   = module.data_storage[0]
+}
