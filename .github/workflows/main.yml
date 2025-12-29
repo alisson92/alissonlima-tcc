@@ -101,7 +101,12 @@ jobs:
       - name: 'Configurar com Ansible'
         run: |
           sudo apt-get update && sudo apt-get install -y ansible jq
-          mkdir -p /home/runner/.ssh/id_rsa
+
+          rm -rf /home/runner/.ssh
+          
+          mkdir -p /home/runner/.ssh
+          chmod 700 /home/runner/.ssh
+
           echo "${{ secrets.TCC_ALISSON_KEY }}" > /home/runner/.ssh/id_rsa
           chmod 600 /home/runner/.ssh/id_rsa
           
