@@ -1,17 +1,18 @@
-# --- CONFIGURAÇÃO DE PROVEDORES DO MÓDULO ---
+# =================================================================
+#        MÓDULO BASTION HOST - AZURE (100% INDEPENDENTE)
+# =================================================================
+
+# 1. Configuração de Provedores do Módulo
+# REMOVIDO: Provedor AWS para garantir independência total.
 terraform {
   required_providers {
     azurerm = {
       source = "hashicorp/azurerm"
     }
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
   }
 }
 
-# 1. IP Público para o Bastion Host
+# 2. IP Público para o Bastion Host
 resource "azurerm_public_ip" "bastion_pip" {
   name                = "pip-bastion-${var.environment}"
   location            = var.location
@@ -20,7 +21,7 @@ resource "azurerm_public_ip" "bastion_pip" {
   sku                 = "Standard"
 }
 
-# 2. Interface de Rede (NIC)
+# 3. Interface de Rede (NIC)
 resource "azurerm_network_interface" "bastion_nic" {
   name                = "nic-bastion-${var.environment}"
   location            = var.location
@@ -34,13 +35,18 @@ resource "azurerm_network_interface" "bastion_nic" {
   }
 }
 
-# 3. Máquina Virtual Linux
+# 4. Máquina Virtual Linux (Ubuntu Server)
 resource "azurerm_linux_virtual_machine" "bastion" {
   name                = "vm-bastion-${var.environment}"
+  # PADRONIZAÇÃO: Nome que aparecerá no DNS interno/hostname
+  computer_name       = "bastion" 
   resource_group_name = var.resource_group_name
   location            = var.location
   size                = "Standard_B1s"
+  
+  # PADRONIZAÇÃO: Usuário 'ubuntu' para paridade total com AWS
   admin_username      = var.admin_username
+
   network_interface_ids = [
     azurerm_network_interface.bastion_nic.id,
   ]
@@ -65,19 +71,6 @@ resource "azurerm_linux_virtual_machine" "bastion" {
   tags = var.tags
 }
 
-# --- SOLUÇÃO DE DNS MULTICLOUD (AWS ROUTE 53) ---
-
-# 4. Busca a Zona que você já criou manualmente na AWS (conforme seu setup/dns/main.tf)
-data "aws_route53_zone" "selected" {
-  name         = "${var.domain_name}." # Note o ponto final para busca de FQDN
-  private_zone = false
-}
-
-# 5. Registro DNS criado na AWS apontando para o IP Público da Azure
-resource "aws_route53_record" "bastion_dns" {
-  zone_id = data.aws_route53_zone.selected.zone_id
-  name    = "bastion-${var.environment}.${var.domain_name}"
-  type    = "A"
-  ttl     = 300
-  records = [azurerm_public_ip.bastion_pip.ip_address]
-}
+# NOTA TÉCNICA: Os registros de DNS (A Records) foram movidos 
+# para o ambiente (environments/azure/teste/main.tf) para 
+# evitar dependências de provedores externos dentro deste módulo.
