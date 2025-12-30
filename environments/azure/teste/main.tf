@@ -37,35 +37,35 @@ module "security" {
 
 # --- CAMADA 2.6: CONEXÕES EXTERNAS (CLOUDFLARE DNS) ---
 
-# Registro para o Site (Acesso do Usuário via HTTPS)
+# Registro A para o Site (Acesso via HTTPS)
 resource "cloudflare_record" "azure_site" {
   count   = var.create_environment ? 1 : 0 
   zone_id = var.cloudflare_zone_id
   
-  # PADRONIZAÇÃO: 'teste-azure', 'homol-azure' ou 'prod-azure'
-  # O uso do hífen garante que o SSL Universal da Cloudflare funcione
+  # PADRONIZAÇÃO: Isso gera 'teste-azure', 'homol-azure', etc.
   name    = "${var.environment_name}-azure" 
   
+  # Usa a referência segura para evitar erro de índice no destroy
   value   = one(module.load_balancer[*].lb_public_ip) 
   type    = "A"
   
-  # ATIVA O PROXY (NUVEM LARANJA): Essencial para o HTTPS e WAF
+  # ATIVA O PROXY (NUVEM LARANJA) para SSL e Proteção
   proxied = true 
   ttl     = 1 
 }
 
-# Registro para o Bastion (Acesso Administrativo via SSH)
+# Registro A para o Bastion (Acesso Administrativo via SSH)
 resource "cloudflare_record" "bastion_dns" {
   count   = var.create_environment ? 1 : 0
   zone_id = var.cloudflare_zone_id
   
-  # PADRONIZAÇÃO: 'bastion-teste', 'bastion-homol' ou 'bastion-prod'
+  # PADRONIZAÇÃO: Isso gera 'bastion-teste', 'bastion-homol', etc.
   name    = "bastion-${var.environment_name}" 
   
   value   = one(module.bastion_host[*].bastion_public_ip)
   type    = "A"
   
-  # DESATIVA O PROXY (NUVEM CINZA): A Cloudflare não suporta SSH na versão gratuita
+  # NUVEM CINZA: Necessário para o protocolo SSH funcionar
   proxied = false 
   ttl     = 1
 }
@@ -155,27 +155,4 @@ resource "azurerm_network_interface_backend_address_pool_association" "app_pool_
 moved {
   from = module.data_storage
   to   = module.data_storage[0]
-}
-
-# --- AUTOMAÇÃO DE DNS E HTTPS (CLOUDFLARE) CORRIGIDA ---
-
-resource "cloudflare_record" "azure_site" {
-  # 1. Adicionamos o count para que o registro exista apenas se o ambiente existir.
-  # Isso garante que no 'destroy' ele seja removido corretamente.
-  count   = var.create_environment ? 1 : 0 
-  
-  zone_id = var.cloudflare_zone_id
-  name    = "teste-azure"                         # Nome ajustado para o SSL funcionar
-  
-  # 2. A MÁGICA SEGURA: Usamos o operador [*] e a função one().
-  # Se o módulo estiver vazio (durante o destroy), o one() retorna nulo graciosamente 
-  # em vez de causar um erro de "Invalid index".
-  value   = one(module.load_balancer[*].lb_public_ip) 
-  
-  type    = "A"
-  
-  # ATIVA O PROXY (NUVEM LARANJA)
-  # Isso garante o certificado SSL e o "Always Use HTTPS"
-  proxied = true 
-  ttl     = 1 # Automático
 }
