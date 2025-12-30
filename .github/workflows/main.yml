@@ -110,9 +110,15 @@ jobs:
           chmod 600 /home/runner/.ssh/tcc-alisson-azure-key
 
           BASTION_IP="${{ needs.terraform_azure.outputs.bastion_ip }}"
-          
-          echo "Testando conexão com o Bastion usando a nova chave ED25519..."
-          ssh -i /home/runner/.ssh/tcc-alisson-azure-key -o StrictHostKeyChecking=no -o ConnectTimeout=15 adminuser@$BASTION_IP "echo 'Autenticação ED25519 OK!'" || { echo "ERRO de autenticação no Bastion."; exit 1; }
+          APP_IP=$(echo '${{ needs.terraform_azure.outputs.app_server_ips }}' | jq -r '.[0]')
+
+          echo "Aguardando 60 segundos para garantir que as VMs internas subiram o SSH..."
+          sleep 60
+
+          echo "Testando se o Bastion alcança a VM interna ($APP_IP)..."
+          ssh -i /home/runner/.ssh/tcc-alisson-azure-rsa-key -o StrictHostKeyChecking=no \
+          -o ProxyCommand="ssh -i /home/runner/.ssh/tcc-alisson-azure-rsa-key -o StrictHostKeyChecking=no -W %h:%p adminuser@$BASTION_IP" \
+          adminuser@$APP_IP "echo 'Salto para VM interna OK!'" || echo "ALERTA: Bastion não alcançou a VM interna. Verifique o NSG na Azure."
 
           echo "[app_servers]" > inventory.ini
           echo '${{ needs.terraform_azure.outputs.app_server_ips }}' | jq -r '.[]' | while read ip; do
