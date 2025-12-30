@@ -1,14 +1,13 @@
 # =================================================================
-#        CONFIGURAÇÃO DE SEGURANÇA AZURE (NSG)
+#        CONFIGURAÇÃO DE SEGURANÇA AZURE (CORRIGIDA)
 # =================================================================
 
-# 1. NSG para o Bastion Host (Equivalente ao SG do Bastion)
+# 1. NSG para o Bastion Host
 resource "azurerm_network_security_group" "bastion" {
   name                = "nsg-bastion-${var.environment}"
   location            = var.location
   resource_group_name = var.resource_group_name
 
-  # Regra de Entrada: Permite SSH (porta 22) apenas do SEU IP
   security_rule {
     name                       = "AllowSSHInbound"
     priority                   = 100
@@ -21,18 +20,15 @@ resource "azurerm_network_security_group" "bastion" {
     destination_address_prefix = "*"
   }
 
-  tags = merge(var.tags, {
-    Name = "nsg-bastion-${var.environment}"
-  })
+  tags = var.tags
 }
 
-# 2. NSG para o Application Load Balancer (Equivalente ao SG do ALB)
+# 2. NSG para o Load Balancer (Abertura para a Internet/Cloudflare)
 resource "azurerm_network_security_group" "alb" {
   name                = "nsg-alb-${var.environment}"
   location            = var.location
   resource_group_name = var.resource_group_name
 
-  # Regra de Entrada: Permite HTTP (80) de qualquer lugar
   security_rule {
     name                       = "AllowHTTPInbound"
     priority                   = 100
@@ -41,11 +37,10 @@ resource "azurerm_network_security_group" "alb" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "80"
-    source_address_prefix      = "*"
+    source_address_prefix      = "*" # Permite que a Cloudflare/Internet chegue ao LB
     destination_address_prefix = "*"
   }
 
-  # Regra de Entrada: Permite HTTPS (443) de qualquer lugar
   security_rule {
     name                       = "AllowHTTPSInbound"
     priority                   = 110
@@ -58,31 +53,42 @@ resource "azurerm_network_security_group" "alb" {
     destination_address_prefix = "*"
   }
 
-  tags = merge(var.tags, {
-    Name = "nsg-alb-${var.environment}"
-  })
+  tags = var.tags
 }
 
-# 3. NSG ÚNICO para a APLICAÇÃO (App e DB)
+# 3. NSG para a APLICAÇÃO (Ajustado para receber tráfego externo)
 resource "azurerm_network_security_group" "application" {
   name                = "nsg-application-${var.environment}"
   location            = var.location
   resource_group_name = var.resource_group_name
 
-  # Regra 1: Permite tráfego HTTP vindo da VNet (Simula o acesso do ALB)
+  # AJUSTE: Permite tráfego HTTP de qualquer origem (necessário pois o LB preserva o IP)
   security_rule {
-    name                       = "AllowHTTPFromVNet"
+    name                       = "AllowHTTPInbound"
     priority                   = 100
     direction                  = "Inbound"
     access                     = "Allow"
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "80"
-    source_address_prefix      = "VirtualNetwork"
+    source_address_prefix      = "*" 
     destination_address_prefix = "*"
   }
 
-  # Regra 2: Permite tráfego SSH vindo do Bastion (Interno)
+  # NOVO: Permite o Health Probe do Azure Load Balancer
+  # Sem isso, o LB acha que a VM está fora do ar e não envia tráfego.
+  security_rule {
+    name                       = "AllowAzureLoadBalancerProbe"
+    priority                   = 105
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "AzureLoadBalancer"
+    destination_address_prefix = "*"
+  }
+
   security_rule {
     name                       = "AllowSSHFromBastion"
     priority                   = 110
@@ -95,7 +101,6 @@ resource "azurerm_network_security_group" "application" {
     destination_address_prefix = "*"
   }
 
-  # Regra 3: Permite MySQL interno (Simula o self=true do AWS)
   security_rule {
     name                       = "AllowMySQLInternal"
     priority                   = 120
@@ -108,20 +113,25 @@ resource "azurerm_network_security_group" "application" {
     destination_address_prefix = "*"
   }
 
-  tags = merge(var.tags, {
-    Name = "nsg-application-${var.environment}"
-  })
+  tags = var.tags
 }
 
-# --- ASSOCIAÇÕES DE SEGURANÇA ---
+# --- ASSOCIAÇÕES ---
 
-# 1. Associa o NSG do Bastion à Subnet Pública A
 resource "azurerm_subnet_network_security_group_association" "bastion" {
   subnet_id                 = var.public_subnet_ids[0]
   network_security_group_id = azurerm_network_security_group.bastion.id
 }
 
-# 2. Associa o NSG de Aplicação às Subnets Privadas (Onde ficarão App e DB)
+# ASSOCIAÇÃO DO ALB (Faltava no seu código)
+# Importante: Se o seu LB estiver na mesma subnet do Bastion, 
+# você precisará unificar as regras em um único NSG.
+# Assumindo que você tem uma subnet dedicada ao LB ou quer proteger a pública:
+# resource "azurerm_subnet_network_security_group_association" "alb" {
+#   subnet_id                 = var.public_subnet_ids[1] # Use a subnet correta aqui
+#   network_security_group_id = azurerm_network_security_group.alb.id
+# }
+
 resource "azurerm_subnet_network_security_group_association" "app_a" {
   subnet_id                 = var.private_subnet_ids[0]
   network_security_group_id = azurerm_network_security_group.application.id
