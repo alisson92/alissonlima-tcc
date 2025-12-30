@@ -1,8 +1,8 @@
 # =====================================================================
-#   ENVIRONMENTS/AZURE/TESTE/MAIN.TF - VERSÃO MULTICLOUD ATUALIZADA
+#   ENVIRONMENTS/AZURE/TESTE/MAIN.TF - VERSÃO MULTICLOUD PADRONIZADA
 # =====================================================================
 
-# --- CAMADA 0: RESOURCE GROUP (Obrigatório na Azure) ---
+# --- CAMADA 0: RESOURCE GROUP ---
 resource "azurerm_resource_group" "main" {
   count    = var.create_environment ? 1 : 0
   name     = "rg-tcc-${var.environment_name}"
@@ -10,7 +10,7 @@ resource "azurerm_resource_group" "main" {
   tags     = var.tags
 }
 
-# --- CAMADA 1: REDE ---
+# --- CAMADA 1: REDE (Agora com as Zonas DNS Internas e Públicas) ---
 module "networking" {
   count               = var.create_environment ? 1 : 0
   source              = "../../../modules/azure/networking"
@@ -35,19 +35,26 @@ module "security" {
   tags                = var.tags
 }
 
-# --- CAMADA 2.5: DNS PRIVADO (Interno Azure) ---
-resource "azurerm_private_dns_zone" "internal" {
+# --- CAMADA 2.6: REGISTROS DNS PÚBLICOS (Conecta os IPs aos Nomes) ---
+
+# Registro A para o Site (teste.azure.alissonlima.dev.br)
+resource "azurerm_dns_a_record" "site_url" {
   count               = var.create_environment ? 1 : 0
-  name                = var.private_dns_zone_name
+  name                = "teste"
+  zone_name           = module.networking[0].public_dns_zone_name # azure.alissonlima.dev.br
   resource_group_name = azurerm_resource_group.main[0].name
+  ttl                 = 300
+  records             = [one(module.load_balancer[*].lb_public_ip)]
 }
 
-resource "azurerm_private_dns_zone_virtual_network_link" "main" {
-  count                 = var.create_environment ? 1 : 0
-  name                  = "link-dns-${var.environment_name}"
-  resource_group_name   = azurerm_resource_group.main[0].name
-  private_dns_zone_name = azurerm_private_dns_zone.internal[0].name
-  virtual_network_id    = module.networking[0].vnet_id
+# Registro A para o Bastion (bastion.azure.alissonlima.dev.br)
+resource "azurerm_dns_a_record" "bastion_url" {
+  count               = var.create_environment ? 1 : 0
+  name                = "bastion"
+  zone_name           = module.networking[0].public_dns_zone_name
+  resource_group_name = azurerm_resource_group.main[0].name
+  ttl                 = 300
+  records             = [one(module.bastion_host[*].bastion_public_ip)]
 }
 
 # --- CAMADA 3: ARMAZENAMENTO PERSISTENTE ---
@@ -69,28 +76,28 @@ module "app_environment" {
   environment           = var.environment_name
   private_subnet_ids    = module.networking[0].private_subnet_ids
   vm_size               = var.instance_type
-  admin_username        = "adminuser"
+  # PADRONIZAÇÃO: Mudando para ubuntu para espelhar a AWS
+  admin_username        = "ubuntu" 
   public_key            = var.public_key
-  db_disk_id            = module.data_storage[0].db_disk_id # Adicionado [0]
-  private_dns_zone_name = azurerm_private_dns_zone.internal[0].name
+  db_disk_id            = module.data_storage[0].db_disk_id
+  private_dns_zone_name = module.networking[0].private_dns_zone_name
   app_server_count      = var.app_server_count
   tags                  = var.tags
 }
 
-# --- CAMADA 5: PONTO DE ACESSO (BASTION) COM DNS AWS ---
+# --- CAMADA 5: PONTO DE ACESSO (BASTION) ---
 module "bastion_host" {
   count               = var.create_environment ? 1 : 0
   source              = "../../../modules/azure/bastion"
   resource_group_name = azurerm_resource_group.main[0].name
   location            = azurerm_resource_group.main[0].location
   public_subnet_id    = module.networking[0].public_subnet_ids[0]
-  admin_username      = "adminuser"
+  # PADRONIZAÇÃO: Mudando para ubuntu
+  admin_username      = "ubuntu" 
   public_key          = var.public_key
-  domain_name         = "alissonlima.dev.br" 
+  domain_name         = "azure.alissonlima.dev.br" 
   environment         = var.environment_name
   tags                = var.tags
-  
-  # O provedor AWS será herdado automaticamente do arquivo providers.tf
 }
 
 # --- CAMADA 6: PONTO DE ENTRADA DA APLICAÇÃO (Load Balancer) ---
@@ -103,7 +110,7 @@ module "load_balancer" {
   tags                = var.tags
 }
 
-# --- CAMADA 7: CONEXÕES FINAIS (Associação NIC -> Load Balancer) ---
+# --- CAMADA 7: CONEXÕES FINAIS ---
 resource "azurerm_network_interface_backend_address_pool_association" "app_pool_assoc" {
   count                   = var.create_environment ? var.app_server_count : 0
   network_interface_id    = module.app_environment[0].app_server_nic_ids[count.index]
@@ -111,7 +118,6 @@ resource "azurerm_network_interface_backend_address_pool_association" "app_pool_
   backend_address_pool_id = module.load_balancer[0].backend_pool_id
 }
 
-# Avisa ao Terraform que o módulo mudou de endereço no estado
 moved {
   from = module.data_storage
   to   = module.data_storage[0]

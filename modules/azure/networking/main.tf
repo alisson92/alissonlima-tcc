@@ -15,9 +15,6 @@ resource "azurerm_virtual_network" "main" {
 }
 
 # --- DEFINIÇÃO DAS SUB-REDES ---
-# No Azure, as subnets são declaradas dentro da VNet ou como recursos separados.
-# Usaremos recursos separados para manter a paridade com seu código AWS.
-
 resource "azurerm_subnet" "public_a" {
   name                 = "subnet-public-a-${var.environment}"
   resource_group_name  = var.resource_group_name
@@ -47,10 +44,6 @@ resource "azurerm_subnet" "private_b" {
 }
 
 # --- LÓGICA DE SAÍDA PARA INTERNET (NAT GATEWAY) ---
-# No Azure, a saída para internet em subnets públicas é automática.
-# Para as subnets PRIVADAS, usamos o Azure NAT Gateway (equivalente ao NAT GW da AWS).
-
-# 1. IP Público para o NAT Gateway
 resource "azurerm_public_ip" "nat" {
   name                = "pip-nat-${var.environment}"
   location            = var.location
@@ -59,7 +52,6 @@ resource "azurerm_public_ip" "nat" {
   sku                 = "Standard"
 }
 
-# 2. O recurso NAT Gateway
 resource "azurerm_nat_gateway" "main" {
   name                = "nat-gw-${var.environment}"
   location            = var.location
@@ -67,13 +59,11 @@ resource "azurerm_nat_gateway" "main" {
   sku_name            = "Standard"
 }
 
-# 3. Associa o IP ao NAT Gateway
 resource "azurerm_nat_gateway_public_ip_association" "main" {
   nat_gateway_id       = azurerm_nat_gateway.main.id
   public_ip_address_id = azurerm_public_ip.nat.id
 }
 
-# 4. Associa o NAT Gateway às Subnets PRIVADAS (Garante saída segura)
 resource "azurerm_subnet_nat_gateway_association" "private_a" {
   subnet_id      = azurerm_subnet.private_a.id
   nat_gateway_id = azurerm_nat_gateway.main.id
@@ -82,4 +72,33 @@ resource "azurerm_subnet_nat_gateway_association" "private_a" {
 resource "azurerm_subnet_nat_gateway_association" "private_b" {
   subnet_id      = azurerm_subnet.private_b.id
   nat_gateway_id = azurerm_nat_gateway.main.id
+}
+
+# =================================================================
+#        CONFIGURAÇÃO DE DNS (INTERNO E PÚBLICO)
+# =================================================================
+
+# 1. DNS PRIVADO: Isolado para cada Cloud (Padronizado .internal)
+resource "azurerm_private_dns_zone" "internal" {
+  name                = "internal.alissonlima.dev.br"
+  resource_group_name = var.resource_group_name
+}
+
+# 2. VÍNCULO DO DNS PRIVADO: Habilita o Auto-Registro das VMs
+resource "azurerm_private_dns_zone_virtual_network_link" "internal_link" {
+  name                  = "vnet-dns-link-${var.environment}"
+  resource_group_name   = var.resource_group_name
+  private_dns_zone_name = azurerm_private_dns_zone.internal.name
+  virtual_network_id    = azurerm_virtual_network.main.id
+  registration_enabled  = true # VMs registrarão seus computer_names automaticamente
+}
+
+# 3. DNS PÚBLICO: Torna a Azure autoritativa para o subdomínio .azure
+resource "azurerm_dns_zone" "public" {
+  name                = "azure.alissonlima.dev.br"
+  resource_group_name = var.resource_group_name
+
+  tags = merge(var.tags, {
+    Purpose = "Public Resolution for Azure Environment"
+  })
 }

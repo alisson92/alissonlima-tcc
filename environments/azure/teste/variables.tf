@@ -3,13 +3,13 @@
 # =====================================================================
 
 variable "persist_db_volume" {
-  description = "Controla se o disco gerenciado (Managed Disk) do banco de dados deve ser protegido contra destruição."
+  description = "Controla se o disco gerenciado do banco de dados deve ser protegido contra destruição."
   type        = bool
-  default     = true # O padrão, se o pipeline não passar nada, é proteger.
+  default     = true
 }
 
 variable "create_environment" {
-  description = "Se for true, cria todos os recursos efêmeros. Se for false, os destrói via count."
+  description = "Se for true, cria todos os recursos efêmeros. Se for false, os destrói."
   type        = bool
   default     = true
 }
@@ -17,6 +17,7 @@ variable "create_environment" {
 variable "environment_name" {
   description = "O nome do ambiente (ex: teste, homol, prod)."
   type        = string
+  default     = "teste" # Valor padrão para agilizar o deploy
 }
 
 variable "vnet_cidr_block" {
@@ -27,15 +28,17 @@ variable "vnet_cidr_block" {
 variable "instance_type" {
   description = "O tipo da instância da VM (Standard_B1s, Standard_B2s, etc)."
   type        = string
+  default     = "Standard_B1s"
 }
 
 variable "lb_dns_name" {
   description = "O subdomínio a ser criado no DNS para o Load Balancer."
   type        = string
+  default     = "teste"
 }
 
 variable "tags" {
-  description = "Um mapa de tags para ser aplicado nos recursos da rede."
+  description = "Um mapa de tags para ser aplicado nos recursos."
   type        = map(string)
   default     = {} 
 }
@@ -51,20 +54,33 @@ variable "app_server_count" {
   default     = 1
 }
 
-# --- ADIÇÕES NECESSÁRIAS PARA O CONTEXTO AZURE ---
+# --- AJUSTES PARA PADRONIZAÇÃO E INDEPENDÊNCIA AZURE ---
 
 variable "location" {
-  description = "A região da Azure onde os recursos serão criados (ex: East US)."
+  description = "A região da Azure (ex: East US)."
   type        = string
   default     = "East US"
 }
 
 variable "public_key" {
-  description = "Conteúdo da chave pública SSH para acesso às VMs Linux."
+  description = "Conteúdo da chave pública SSH para as VMs."
   type        = string
 }
 
-variable "private_dns_zone_name" {
-  description = "O nome da zona de DNS privado (ex: internal.alissonlima.dev.br)."
+variable "admin_username" {
+  description = "Usuário padrão para acesso às VMs (Padronizado com AWS)."
   type        = string
+  default     = "ubuntu" # Garante a paridade com seu manual de acesso
+}
+
+variable "private_dns_zone_name" {
+  description = "O nome da zona de DNS privado."
+  type        = string
+  default     = "internal.alissonlima.dev.br"
+}
+
+variable "public_domain_name" {
+  description = "O domínio base para a resolução pública na Azure."
+  type        = string
+  default     = "azure.alissonlima.dev.br"
 }
