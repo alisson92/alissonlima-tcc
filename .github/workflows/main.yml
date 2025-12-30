@@ -102,18 +102,17 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y ansible jq
 
-          # 1. Limpeza e preparação rigorosa da chave
           rm -rf /home/runner/.ssh
           mkdir -p /home/runner/.ssh
           chmod 700 /home/runner/.ssh
-          echo "${{ secrets.TCC_ALISSON_KEY }}" > /home/runner/.ssh/id_rsa
-          chmod 600 /home/runner/.ssh/id_rsa
+
+          echo "${{ secrets.TCC_ALISSON_AZURE_KEY }}" > /home/runner/.ssh/tcc-alisson-azure-key
+          chmod 600 /home/runner/.ssh/tcc-alisson-azure-key
 
           BASTION_IP="${{ needs.terraform_azure.outputs.bastion_ip }}"
           
-          # 2. TESTE DE CONEXÃO DIRETA (O divisor de águas)
-          echo "Testando conexão direta com o Bastion ($BASTION_IP)..."
-          ssh -i /home/runner/.ssh/id_rsa -o StrictHostKeyChecking=no -o ConnectTimeout=15 adminuser@$BASTION_IP "echo 'Login no Bastion com SUCESSO!'" || { echo "ERRO: Falha ao logar no Bastion. Verifique se a Secret TCC_ALISSON_KEY é o par da chave pública no Terraform."; exit 1; }
+          echo "Testando conexão com o Bastion usando a nova chave ED25519..."
+          ssh -i /home/runner/.ssh/tcc-alisson-azure-key -o StrictHostKeyChecking=no -o ConnectTimeout=15 adminuser@$BASTION_IP "echo 'Autenticação ED25519 OK!'" || { echo "ERRO de autenticação no Bastion."; exit 1; }
 
           echo "[app_servers]" > inventory.ini
           echo '${{ needs.terraform_azure.outputs.app_server_ips }}' | jq -r '.[]' | while read ip; do
