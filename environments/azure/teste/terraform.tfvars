@@ -24,3 +24,8 @@ tags = {
   ManagedBy = "Terraform"
   Env       = "teste"
 }
+
+# --- Credenciais Cloudflare (Automação de DNS/SSL) ---
+# Substitua os valores abaixo pelos seus dados reais da Cloudflare
+cloudflare_api_token = "RO3VU8wqe9eYyWF8omAig4wlpYN0gPRXt55XIBOl"
+cloudflare_zone_id    = "1a1c290f0f787a922cd6bfd4285d7ae9"

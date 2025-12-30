@@ -84,3 +84,14 @@ variable "public_domain_name" {
   type        = string
   default     = "azure.alissonlima.dev.br"
 }
+
+variable "cloudflare_api_token" {
+  description = "Token de API da Cloudflare com permissão de edição de DNS"
+  type        = string
+  sensitive   = true # Protege o token nos logs
+}
+
+variable "cloudflare_zone_id" {
+  description = "ID da Zona do domínio alissonlima.dev.br na Cloudflare"
+  type        = string
+}
