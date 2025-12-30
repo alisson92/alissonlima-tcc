@@ -1,6 +1,6 @@
 output "bastion_public_ip" {
   description = "O IP público do Bastion Host para acesso administrativo."
-  value       = azurerm_public_ip.bastion_pip.ip_address
+  value       = azurerm_linux_virtual_machine.bastion.public_ip_address
 }
 
 output "bastion_id" {

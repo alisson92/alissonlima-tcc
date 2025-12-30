@@ -107,21 +107,21 @@ jobs:
           mkdir -p /home/runner/.ssh
           chmod 700 /home/runner/.ssh
 
-          # 2. Criação do arquivo (PADRONIZADO: tcc-alisson-azure-rsa-key)
+          # 2. Criação da chave RSA 4096
           echo "${{ secrets.TCC_ALISSON_AZURE_KEY }}" > /home/runner/.ssh/tcc-alisson-azure-rsa-key
           chmod 600 /home/runner/.ssh/tcc-alisson-azure-rsa-key
 
           BASTION_IP="${{ needs.terraform_azure.outputs.bastion_ip }}"
           APP_IP=$(echo '${{ needs.terraform_azure.outputs.app_server_ips }}' | jq -r '.[0]')
 
-          echo "Aguardando 60 segundos para estabilidade do SSH..."
+          echo "Aguardando 60 segundos para estabilidade do SSH e registro do DNS..."
           sleep 60
 
-          # 3. Teste de Salto (Usando o nome de arquivo correto)
+          # 3. Teste de Salto (AJUSTADO: Usuário ubuntu)
           echo "Testando se o Bastion alcança a VM interna ($APP_IP)..."
           ssh -i /home/runner/.ssh/tcc-alisson-azure-rsa-key -o StrictHostKeyChecking=no \
-            -o ProxyCommand="ssh -i /home/runner/.ssh/tcc-alisson-azure-rsa-key -o StrictHostKeyChecking=no -W %h:%p adminuser@$BASTION_IP" \
-            adminuser@$APP_IP "echo 'Salto para VM interna OK!'" || echo "ALERTA: Bastion ainda não alcança a VM interna."
+            -o ProxyCommand="ssh -i /home/runner/.ssh/tcc-alisson-azure-rsa-key -o StrictHostKeyChecking=no -W %h:%p ubuntu@$BASTION_IP" \
+            ubuntu@$APP_IP "echo 'Salto para VM interna OK!'" || echo "ALERTA: Conexão SSH falhou. Verifique se as VMs aceitaram o usuário ubuntu."
 
           # 4. Geração do Inventário
           echo "[app_servers]" > inventory.ini
@@ -134,10 +134,11 @@ jobs:
           db-server ansible_host=${{ needs.terraform_azure.outputs.db_server_ip }}
 
           [all:vars]
-          ansible_user=adminuser
-          # CORREÇÃO AQUI: Apontando para o arquivo que realmente criamos
+          # AJUSTADO: Agora igual à AWS
+          ansible_user=ubuntu 
           ansible_ssh_private_key_file=/home/runner/.ssh/tcc-alisson-azure-rsa-key
-          ansible_ssh_common_args='-o StrictHostKeyChecking=no -o ProxyCommand="ssh -i /home/runner/.ssh/tcc-alisson-azure-rsa-key -o StrictHostKeyChecking=no -W %h:%p adminuser@$BASTION_IP"'
+          # AJUSTADO: ProxyCommand agora usa ubuntu@bastion
+          ansible_ssh_common_args='-o StrictHostKeyChecking=no -o ProxyCommand="ssh -i /home/runner/.ssh/tcc-alisson-azure-rsa-key -o StrictHostKeyChecking=no -W %h:%p ubuntu@$BASTION_IP"'
           EOF
           
           # 5. Execução dos Playbooks
