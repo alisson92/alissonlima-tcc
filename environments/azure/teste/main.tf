@@ -123,18 +123,25 @@ moved {
   to   = module.data_storage[0]
 }
 
-# --- AUTOMAÇÃO DE DNS E HTTPS (CLOUDFLARE) ---
+# --- AUTOMAÇÃO DE DNS E HTTPS (CLOUDFLARE) CORRIGIDA ---
 
 resource "cloudflare_record" "azure_site" {
+  # 1. Adicionamos o count para que o registro exista apenas se o ambiente existir.
+  # Isso garante que no 'destroy' ele seja removido corretamente.
+  count   = var.create_environment ? 1 : 0 
+  
   zone_id = var.cloudflare_zone_id
-  name    = "teste-azure"                     # O subdomínio desejado
-  # A MÁGICA ACONTECE AQUI: 
-  # Ele pega o IP diretamente do output do seu Load Balancer
-  value   = module.load_balancer[0].lb_public_ip 
+  name    = "teste-azure"                         # Nome ajustado para o SSL funcionar
+  
+  # 2. A MÁGICA SEGURA: Usamos o operador [*] e a função one().
+  # Se o módulo estiver vazio (durante o destroy), o one() retorna nulo graciosamente 
+  # em vez de causar um erro de "Invalid index".
+  value   = one(module.load_balancer[*].lb_public_ip) 
+  
   type    = "A"
   
   # ATIVA O PROXY (NUVEM LARANJA)
-  # Isso garante que o certificado SSL e o "Always Use HTTPS" funcionem
+  # Isso garante o certificado SSL e o "Always Use HTTPS"
   proxied = true 
   ttl     = 1 # Automático
 }
