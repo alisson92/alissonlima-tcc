@@ -1,42 +1,43 @@
+# =====================================================================
+#   VARIABLES.TF - MÓDULO BASTION AZURE (VERSÃO LIMPA E INDEPENDENTE)
+# =====================================================================
+
 variable "public_subnet_id" {
-  description = "ID da sub-rede pública na VNet Azure."
+  description = "ID da sub-rede pública na VNet Azure onde o Bastion será alocado."
   type        = string
 }
 
-# No Azure, o NSG é associado à subnet, então não precisamos passar o ID do SG aqui 
-# se a associação já foi feita no módulo de security.
-
 variable "admin_username" {
-  description = "Usuário para login na VM."
+  description = "Usuário padrão para login via SSH na VM do Bastion (Padronizado como 'ubuntu')."
   type        = string
 }
 
 variable "public_key" {
-  description = "Conteúdo da chave pública SSH para acesso."
-  type        = string
-}
-
-variable "domain_name" {
-  description = "O nome da zona de DNS pública na Azure."
+  description = "Conteúdo da chave pública SSH para autorizar o acesso à VM."
   type        = string
 }
 
 variable "environment" {
-  description = "Ambiente (ex: teste, homol, prod)."
+  description = "O nome do ambiente atual (ex: teste, homol, prod) para fins de nomenclatura."
   type        = string
 }
 
 variable "location" {
-  description = "Região da Azure."
+  description = "A região da Azure onde o Bastion Host será provisionado."
   type        = string
 }
 
 variable "resource_group_name" {
-  description = "Nome do Resource Group."
+  description = "O nome do Resource Group que conterá os recursos do Bastion."
   type        = string
 }
 
 variable "tags" {
-  type    = map(string)
-  default = {}
+  description = "Mapeamento de tags para organização e auditoria de recursos."
+  type        = map(string)
+  default     = {}
 }
+
+# REMOVIDO: variable "domain_name" 
+# Justificativa: A gestão de DNS agora é centralizada no ambiente de teste
+# utilizando o provedor Azure DNS nativo, removendo a dependência do Route 53.
