@@ -35,31 +35,37 @@ module "security" {
   tags                = var.tags
 }
 
-# --- CAMADA 2.6: REGISTROS DNS PÚBLICOS (Conecta os IPs aos Nomes) ---
+# --- CAMADA 2.6: CONEXÕES EXTERNAS (CLOUDFLARE DNS) ---
 
-# Registro A para o Site (teste.azure.alissonlima.dev.br)
-resource "azurerm_dns_a_record" "site_url" {
-  count               = var.create_environment ? 1 : 0
-  name                = "teste"
-  zone_name           = module.networking[0].public_dns_zone_name # azure.alissonlima.dev.br
-  resource_group_name = azurerm_resource_group.main[0].name
-  ttl                 = 300
-  records             = [one(module.load_balancer[*].lb_public_ip)]
+# Registro para o Site (Acesso do Usuário via HTTPS)
+resource "cloudflare_record" "azure_site" {
+  count   = var.create_environment ? 1 : 0 
+  zone_id = var.cloudflare_zone_id
+  
+  # PADRONIZAÇÃO: 'teste-azure', 'homol-azure' ou 'prod-azure'
+  # O uso do hífen garante que o SSL Universal da Cloudflare funcione
+  name    = "${var.environment_name}-azure" 
+  
+  value   = one(module.load_balancer[*].lb_public_ip) 
+  type    = "A"
+  
+  # ATIVA O PROXY (NUVEM LARANJA): Essencial para o HTTPS e WAF
+  proxied = true 
+  ttl     = 1 
 }
 
-# Registro A para o Bastion na Cloudflare (Padrão Multicloud)
+# Registro para o Bastion (Acesso Administrativo via SSH)
 resource "cloudflare_record" "bastion_dns" {
   count   = var.create_environment ? 1 : 0
   zone_id = var.cloudflare_zone_id
   
-  # PADRONIZAÇÃO: Isso gera 'bastion-teste', 'bastion-homol', etc.
+  # PADRONIZAÇÃO: 'bastion-teste', 'bastion-homol' ou 'bastion-prod'
   name    = "bastion-${var.environment_name}" 
   
   value   = one(module.bastion_host[*].bastion_public_ip)
   type    = "A"
   
-  # IMPORTANTE: Proxied deve ser FALSE para conexões SSH
-  # A Cloudflare só faz proxy de tráfego HTTP/HTTPS na versão gratuita
+  # DESATIVA O PROXY (NUVEM CINZA): A Cloudflare não suporta SSH na versão gratuita
   proxied = false 
   ttl     = 1
 }
