@@ -122,3 +122,19 @@ moved {
   from = module.data_storage
   to   = module.data_storage[0]
 }
+
+# --- AUTOMAÇÃO DE DNS E HTTPS (CLOUDFLARE) ---
+
+resource "cloudflare_record" "azure_site" {
+  zone_id = var.cloudflare_zone_id
+  name    = "teste.azure"                     # O subdomínio desejado
+  # A MÁGICA ACONTECE AQUI: 
+  # Ele pega o IP diretamente do output do seu Load Balancer
+  value   = module.load_balancer[0].lb_public_ip 
+  type    = "A"
+  
+  # ATIVA O PROXY (NUVEM LARANJA)
+  # Isso garante que o certificado SSL e o "Always Use HTTPS" funcionem
+  proxied = true 
+  ttl     = 1 # Automático
+}
