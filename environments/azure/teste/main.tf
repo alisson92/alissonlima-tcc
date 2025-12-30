@@ -47,14 +47,21 @@ resource "azurerm_dns_a_record" "site_url" {
   records             = [one(module.load_balancer[*].lb_public_ip)]
 }
 
-# Registro A para o Bastion (bastion.azure.alissonlima.dev.br)
-resource "azurerm_dns_a_record" "bastion_url" {
-  count               = var.create_environment ? 1 : 0
-  name                = "bastion"
-  zone_name           = module.networking[0].public_dns_zone_name
-  resource_group_name = azurerm_resource_group.main[0].name
-  ttl                 = 300
-  records             = [one(module.bastion_host[*].bastion_public_ip)]
+# Registro A para o Bastion na Cloudflare (Padrão Multicloud)
+resource "cloudflare_record" "bastion_dns" {
+  count   = var.create_environment ? 1 : 0
+  zone_id = var.cloudflare_zone_id
+  
+  # PADRONIZAÇÃO: Isso gera 'bastion-teste', 'bastion-homol', etc.
+  name    = "bastion-${var.environment_name}" 
+  
+  value   = one(module.bastion_host[*].bastion_public_ip)
+  type    = "A"
+  
+  # IMPORTANTE: Proxied deve ser FALSE para conexões SSH
+  # A Cloudflare só faz proxy de tráfego HTTP/HTTPS na versão gratuita
+  proxied = false 
+  ttl     = 1
 }
 
 # --- CAMADA 3: ARMAZENAMENTO PERSISTENTE ---
@@ -83,6 +90,27 @@ module "app_environment" {
   private_dns_zone_name = module.networking[0].private_dns_zone_name
   app_server_count      = var.app_server_count
   tags                  = var.tags
+}
+
+# Registro Interno para o App Server
+resource "azurerm_private_dns_a_record" "app_internal" {
+  count               = var.create_environment ? var.app_server_count : 0
+  name                = var.app_server_count > 1 ? "app-server-${count.index}" : "app-server"
+  zone_name           = module.networking[0].private_dns_zone_name # internal.alissonlima.dev.br
+  resource_group_name = azurerm_resource_group.main[0].name
+  ttl                 = 300
+  records             = [module.app_environment[0].app_server_private_ips[count.index]]
+}
+
+# Registro Interno para o DB Server
+resource "azurerm_private_dns_a_record" "db_internal" {
+  count               = var.create_environment ? 1 : 0
+  name                = "db-server"
+  zone_name           = module.networking[0].private_dns_zone_name
+  resource_group_name = azurerm_resource_group.main[0].name
+  ttl                 = 300
+  # Note: Certifique-se que o módulo app_environment exporta o IP privado do DB
+  records             = [module.app_environment[0].db_server_private_ip]
 }
 
 # --- CAMADA 5: PONTO DE ACESSO (BASTION) ---
