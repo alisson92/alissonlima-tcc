@@ -6,6 +6,10 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~> 3.0"
     }
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 4.0"
+    }
     aws = {
       source  = "hashicorp/aws"
       version = "~> 5.0"
@@ -18,12 +22,4 @@ terraform {
     container_name       = "tfstate"
     key                  = "environments/azure/teste/terraform.tfstate"
   }
-}
-
-provider "azurerm" {
-  features {}
-}
-
-provider "aws" {
-  region = "us-east-1"
 }
