@@ -92,10 +92,10 @@ module "bastion_host" {
   resource_group_name = azurerm_resource_group.main[0].name
   location            = azurerm_resource_group.main[0].location
   public_subnet_id    = module.networking[0].public_subnet_ids[0]
-  # PADRONIZAÇÃO: Mudando para ubuntu
+  # PADRONIZAÇÃO: Usuário ubuntu para paridade com AWS
   admin_username      = "ubuntu" 
   public_key          = var.public_key
-  domain_name         = "azure.alissonlima.dev.br" 
+  # A LINHA 'domain_name' FOI REMOVIDA DAQUI
   environment         = var.environment_name
   tags                = var.tags
 }
