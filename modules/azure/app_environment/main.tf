@@ -107,33 +107,3 @@ resource "azurerm_virtual_machine_data_disk_attachment" "db_data" {
   lun                = "10"
   caching            = "ReadWrite"
 }
-
-# --- 6. Registros de DNS Privado (Azure Private DNS) ---
-
-# Registro GENÉRICO (Serviço)
-resource "azurerm_private_dns_a_record" "app_service" {
-  name                = "app-server"
-  zone_name           = var.private_dns_zone_name
-  resource_group_name = var.resource_group_name
-  ttl                 = 60
-  records             = azurerm_network_interface.app_nic[*].private_ip_address
-}
-
-# Registros INDIVIDUAIS (Admin)
-resource "azurerm_private_dns_a_record" "app_admin" {
-  count               = var.app_server_count
-  name                = "app-server-${count.index}"
-  zone_name           = var.private_dns_zone_name
-  resource_group_name = var.resource_group_name
-  ttl                 = 300
-  records             = [azurerm_network_interface.app_nic[count.index].private_ip_address]
-}
-
-# Registro Banco de Dados
-resource "azurerm_private_dns_a_record" "db_dns" {
-  name                = "db-server"
-  zone_name           = var.private_dns_zone_name
-  resource_group_name = var.resource_group_name
-  ttl                 = 300
-  records             = [azurerm_network_interface.db_nic.private_ip_address]
-}
