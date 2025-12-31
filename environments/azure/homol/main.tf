@@ -1,120 +1,172 @@
 # =====================================================================
-#   ENVIRONMENTS/HOMOL/MAIN.TF - VERSÃO CORRIGIDA E CONSISTENTE
+#   ENVIRONMENTS/AZURE/TESTE/MAIN.TF - VERSÃO MULTICLOUD PADRONIZADA
 # =====================================================================
 
-provider "aws" {
-  region = "us-east-1"
+# --- CAMADA 0: RESOURCE GROUP ---
+resource "azurerm_resource_group" "main" {
+  count    = var.create_environment ? 1 : 0
+  name     = "rg-tcc-${var.environment_name}"
+  location = var.location
+  tags     = var.tags
 }
 
-data "aws_route53_zone" "primary" {
-  name = "alissonlima.dev.br"
-}
-
-# --- CAMADA 1: REDE ---
+# --- CAMADA 1: REDE (Agora com as Zonas DNS Internas e Públicas) ---
 module "networking" {
-  count          = var.create_environment ? 1 : 0
-  source         = "../../../modules/aws/networking"
-  vpc_cidr_block = var.vpc_cidr_block
-  environment    = var.environment_name
-  tags           = var.tags
-  aws_region     = "us-east-1"
+  count               = var.create_environment ? 1 : 0
+  source              = "../../../modules/azure/networking"
+  resource_group_name = azurerm_resource_group.main[0].name
+  location            = azurerm_resource_group.main[0].location
+  environment         = var.environment_name
+  vnet_cidr_block     = var.vnet_cidr_block
+  tags                = var.tags
 }
 
 # --- CAMADA 2: SEGURANÇA ---
 module "security" {
-  count          = var.create_environment ? 1 : 0
-  source         = "../../../modules/aws/security"
-  vpc_id         = module.networking[0].vpc_id
-  vpc_cidr_block = module.networking[0].vpc_cidr_block_output
-  environment    = var.environment_name
-  my_ip          = var.my_ip
-  tags           = var.tags
+  count               = var.create_environment ? 1 : 0
+  source              = "../../../modules/azure/security"
+  resource_group_name = azurerm_resource_group.main[0].name
+  location            = azurerm_resource_group.main[0].location
+  environment         = var.environment_name
+  vnet_cidr_block     = var.vnet_cidr_block
+  my_ip               = var.my_ip
+  public_subnet_ids   = module.networking[0].public_subnet_ids
+  private_subnet_ids  = module.networking[0].private_subnet_ids
+  tags                = var.tags
 }
 
-# --- CAMADA 2.5: DNS PRIVADO ---
-resource "aws_route53_zone" "private" {
-  count = var.create_environment ? 1 : 0
-  name  = "internal.alissonlima.dev.br"
+# --- CAMADA 2.6: CONEXÕES EXTERNAS (CLOUDFLARE DNS) ---
 
-  vpc {
-    vpc_id = module.networking[0].vpc_id
-  }
+resource "cloudflare_record" "azure_site" {
+  count   = var.create_environment ? 1 : 0 
+  zone_id = var.cloudflare_zone_id
+  name    = "${var.environment_name}-azure" 
+  
+  # CORREÇÃO: 'value' alterado para 'content' para evitar o Warning
+  content = one(module.load_balancer[*].lb_public_ip) 
+  
+  type    = "A"
+  proxied = true 
+  ttl     = 1 
 }
 
-# --- CAMADA 3: ARMAZENAMENTO PERSISTENTE (SEM COUNT) ---
+resource "cloudflare_record" "bastion_dns" {
+  count   = var.create_environment ? 1 : 0
+  zone_id = var.cloudflare_zone_id
+  name    = "bastion-${var.environment_name}" 
+  
+  # CORREÇÃO: 'value' alterado para 'content'
+  content = one(module.bastion_host[*].bastion_public_ip)
+  
+  type    = "A"
+  proxied = false 
+  ttl     = 1
+}
+
+# --- REGISTROS INTERNOS (Private DNS) ---
+
+resource "azurerm_private_dns_a_record" "app_internal" {
+  count               = var.create_environment ? var.app_server_count : 0
+  # Se existir mais de um servidor, ele cria app-server-0, app-server-1...
+  name                = var.app_server_count > 1 ? "app-server-${count.index}" : "app-server"
+  zone_name           = module.networking[0].private_dns_zone_name
+  resource_group_name = azurerm_resource_group.main[0].name
+  ttl                 = 300
+  records             = [module.app_environment[0].app_server_private_ips[count.index]]
+}
+
+resource "azurerm_private_dns_a_record" "db_internal" {
+  count               = var.create_environment ? 1 : 0
+  name                = "db-server"
+  zone_name           = module.networking[0].private_dns_zone_name
+  resource_group_name = azurerm_resource_group.main[0].name
+  ttl                 = 300
+  records             = [module.app_environment[0].db_server_private_ip]
+}
+
+# --- CAMADA 3: ARMAZENAMENTO PERSISTENTE ---
 module "data_storage" {
-  source                      = "../../../modules/aws/data_storage"
-  environment                 = var.environment_name
-  db_server_availability_zone = var.create_environment ? module.networking[0].private_subnet_availability_zone : "us-east-1a"
-  tags                        = var.tags
+  count               = var.create_environment ? 1 : 0
+  source              = "../../../modules/azure/data_storage"
+  resource_group_name = azurerm_resource_group.main[0].name
+  location            = azurerm_resource_group.main[0].location
+  environment         = var.environment_name
+  tags                = var.tags
 }
 
 # --- CAMADA 4: COMPUTAÇÃO (Servidores) ---
 module "app_environment" {
-  count = var.create_environment ? 1 : 0
-  source                    = "../../../modules/aws/app_environment"
-  
-  # Como 'homol' só tem 1 servidor (por padrão), não precisamos passar 'app_server_count'.
-  
-  # <-- CORREÇÃO: Passando a LISTA completa de sub-redes.
-  private_subnet_ids        = module.networking[0].private_subnet_ids
+  count                 = var.create_environment ? 1 : 0
+  source                = "../../../modules/azure/app_environment"
+  resource_group_name   = azurerm_resource_group.main[0].name
+  location              = azurerm_resource_group.main[0].location
+  environment           = var.environment_name
+  private_subnet_ids    = module.networking[0].private_subnet_ids
+  vm_size               = var.instance_type
+  # PADRONIZAÇÃO: Mudando para ubuntu para espelhar a AWS
+  admin_username        = "ubuntu" 
+  public_key            = var.public_key
+  db_disk_id            = module.data_storage[0].db_disk_id
+  private_dns_zone_name = module.networking[0].private_dns_zone_name
+  app_server_count      = var.app_server_count
+  tags                  = var.tags
+}
 
-  environment               = var.environment_name
-  instance_type             = var.instance_type
-  sg_application_id         = module.security[0].sg_application_id
-  db_volume_id              = module.data_storage.volume_id
-  ami_id                    = "ami-0a7d80731ae1b2435"
-  key_name                  = "tcc-alisson-key"
-  db_server_availability_zone = var.create_environment ? module.networking[0].private_subnet_availability_zone : "us-east-1a"
-  private_zone_id           = aws_route53_zone.private[0].zone_id
-  private_domain_name       = aws_route53_zone.private[0].name
-  tags                      = var.tags
+# Registro Interno para o App Server
+resource "azurerm_private_dns_a_record" "app_internal" {
+  count               = var.create_environment ? var.app_server_count : 0
+  name                = var.app_server_count > 1 ? "app-server-${count.index}" : "app-server"
+  zone_name           = module.networking[0].private_dns_zone_name # internal.alissonlima.dev.br
+  resource_group_name = azurerm_resource_group.main[0].name
+  ttl                 = 300
+  records             = [module.app_environment[0].app_server_private_ips[count.index]]
+}
+
+# Registro Interno para o DB Server
+resource "azurerm_private_dns_a_record" "db_internal" {
+  count               = var.create_environment ? 1 : 0
+  name                = "db-server"
+  zone_name           = module.networking[0].private_dns_zone_name
+  resource_group_name = azurerm_resource_group.main[0].name
+  ttl                 = 300
+  # Note: Certifique-se que o módulo app_environment exporta o IP privado do DB
+  records             = [module.app_environment[0].db_server_private_ip]
 }
 
 # --- CAMADA 5: PONTO DE ACESSO (BASTION) ---
 module "bastion_host" {
-  count              = var.create_environment ? 1 : 0
-  source             = "../../../modules/aws/bastion"
-  public_subnet_id   = module.networking[0].public_subnet_ids[0]
-  sg_bastion_id      = module.security[0].sg_bastion_id
-  zone_id            = data.aws_route53_zone.primary.zone_id
-  domain_name        = data.aws_route53_zone.primary.name
-  environment        = var.environment_name
-  ami_id             = "ami-0a7d80731ae1b2435"
-  key_name           = "tcc-alisson-key"
-  tags               = var.tags
+  count               = var.create_environment ? 1 : 0
+  source              = "../../../modules/azure/bastion"
+  resource_group_name = azurerm_resource_group.main[0].name
+  location            = azurerm_resource_group.main[0].location
+  public_subnet_id    = module.networking[0].public_subnet_ids[0]
+  # PADRONIZAÇÃO: Usuário ubuntu para paridade com AWS
+  admin_username      = "ubuntu" 
+  public_key          = var.public_key
+  # A LINHA 'domain_name' FOI REMOVIDA DAQUI
+  environment         = var.environment_name
+  tags                = var.tags
 }
 
-# --- CAMADA 6: PONTO DE ENTRADA DA APLICAÇÃO (ALB) ---
+# --- CAMADA 6: PONTO DE ENTRADA DA APLICAÇÃO (Load Balancer) ---
 module "load_balancer" {
-  count             = var.create_environment ? 1 : 0
-  source            = "../../../modules/aws/load_balancer"
-  vpc_id            = module.networking[0].vpc_id
-  public_subnet_ids = module.networking[0].public_subnet_ids
-  sg_alb_id         = module.security[0].sg_alb_id
-  environment       = var.environment_name
-  certificate_arn   = "arn:aws:acm:us-east-1:531390799560:certificate/79ae68b0-3105-48af-939c-f521fe926823"
-  tags              = var.tags
+  count               = var.create_environment ? 1 : 0
+  source              = "../../../modules/azure/load_balancer"
+  resource_group_name = azurerm_resource_group.main[0].name
+  location            = azurerm_resource_group.main[0].location
+  environment         = var.environment_name
+  tags                = var.tags
 }
 
 # --- CAMADA 7: CONEXÕES FINAIS ---
-resource "aws_lb_target_group_attachment" "app_server" {
-  count            = var.create_environment ? 1 : 0
-  target_group_arn = module.load_balancer[0].target_group_arn
-  # <-- CORREÇÃO: Usando a saída de lista 'app_server_ids' e pegando o primeiro (e único) item.
-  target_id        = module.app_environment[0].app_server_ids[0]
-  port             = 80
+resource "azurerm_network_interface_backend_address_pool_association" "app_pool_assoc" {
+  count                   = var.create_environment ? var.app_server_count : 0
+  network_interface_id    = module.app_environment[0].app_server_nic_ids[count.index]
+  ip_configuration_name   = "internal"
+  backend_address_pool_id = module.load_balancer[0].backend_pool_id
 }
 
-resource "aws_route53_record" "app_dns" {
-  count   = var.create_environment ? 1 : 0
-  zone_id = data.aws_route53_zone.primary.zone_id
-  name    = "${var.alb_dns_name}.${data.aws_route53_zone.primary.name}"
-  type    = "A"
-
-  alias {
-    name                   = module.load_balancer[0].alb_dns_name
-    zone_id                = module.load_balancer[0].alb_zone_id
-    evaluate_target_health = true
-  }
+moved {
+  from = module.data_storage
+  to   = module.data_storage[0]
 }
