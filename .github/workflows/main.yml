@@ -1,6 +1,6 @@
 name: 'Orquestrador Multicloud TCC (Azure & AWS)'
 
-run-name: "${{ github.event.inputs.provider == 'azure' && '🟦' || '🟧' }} ${{ github.event.inputs.action == 'apply' && 'Deploy' || 'Destroy' }} [${{ github.event.inputs.environment }}] por @${{ github.actor }}"
+run-name: "${{ github.event.inputs.provider == 'azure' && '🟦' || '🟧' }} ${{ github.event.inputs.action == 'apply' && 'Deploy' || 'Destroy' }} ${{ github.event.inputs.provider }} [${{ github.event.inputs.environment }}] por @${{ github.actor }}"
 
 on:
   workflow_dispatch:
@@ -35,6 +35,7 @@ env:
 jobs:
   terraform_azure:
     name: "Terraform Azure | ${{ github.event.inputs.environment }}"
+    if: github.event.inputs.provider == 'azure'
     runs-on: ubuntu-latest
 
     outputs:
@@ -81,8 +82,8 @@ jobs:
   configure_azure_servers:
     name: 'Ansible Azure ⚙️'
     needs: terraform_azure
+    if: github.event.inputs.provider == 'azure' && needs.terraform_azure.result == 'success' && github.event.inputs.action == 'apply'
     runs-on: ubuntu-latest
-    if: needs.terraform_azure.result == 'success' && github.event.inputs.action == 'apply'
 
     steps:
       - name: 'Checkout'
