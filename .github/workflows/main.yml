@@ -1,18 +1,22 @@
-name: 'Azure - Pipeline de Infraestrutura'
+name: 'Orquestrador Multicloud TCC (Azure & AWS)'
 
-run-name: "Azure: ${{ github.event.inputs.action == 'apply' && '🚀 Deploy Azure' || '❌ Destroy Azure' }} [${{ github.event.inputs.environment }}] por @${{ github.actor }}"
+run-name: "${{ github.event.inputs.provider == 'azure' && '🟦' || '🟧' }} ${{ github.event.inputs.action == 'apply' && 'Deploy' || 'Destroy' }} [${{ github.event.inputs.environment }}] por @${{ github.actor }}"
 
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        description: 'Azure - Selecione o ambiente para o Deploy'
+      provider:
+        description: 'Selecione o Provedor de Nuvem'
         required: true
-        default: 'teste'
+        type: choice
+        options: [azure, aws]
+      environment:
+        description: 'Selecione o Ambiente'
+        required: true
         type: choice
         options: [teste, homol, prod]
       action:
-        description: 'Ação: Apply ou Destroy'
+        description: 'Ação: apply ou destroy'
         required: true
         type: choice
         options: [apply, destroy]
@@ -24,6 +28,9 @@ env:
   ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
   ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
   ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_DEFAULT_REGION: "us-east-1"
 
 jobs:
   terraform_azure:
