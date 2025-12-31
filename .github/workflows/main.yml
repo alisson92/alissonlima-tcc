@@ -1,25 +1,28 @@
 name: 'Orquestrador Multicloud TCC (Azure & AWS)'
 
-run-name: "${{ github.event.inputs.provider == 'azure' && '🟦' || '🟧' }} ${{ github.event.inputs.action == 'apply' && 'Deploy' || 'Destroy' }} ${{ github.event.inputs.provider }} [${{ github.event.inputs.environment }}] por @${{ github.actor }}"
+run-name: "${{ github.event.inputs.provider == 'azure' && '🟦' || '🟧' }} ${{ github.event.inputs.action }} ${{ github.event.inputs.provider }} [${{ github.event.inputs.environment }}] por @${{ github.actor }}"
 
 on:
   workflow_dispatch:
     inputs:
       provider:
-        description: 'Selecione o Provedor de Nuvem'
+        description: 'Provedor de Nuvem'
         required: true
         type: choice
         options: [azure, aws]
       environment:
-        description: 'Selecione o Ambiente'
+        description: 'Ambiente'
         required: true
         type: choice
         options: [teste, homol, prod]
       action:
-        description: 'Ação: apply ou destroy'
+        description: 'Ação'
         required: true
         type: choice
-        options: [apply, destroy]
+        options: [apply, destroy, force-unlock]
+      lock_id:
+        description: 'Lock ID (Necessário apenas para force-unlock)'
+        required: false
 
 env:
   TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -33,6 +36,9 @@ env:
   AWS_DEFAULT_REGION: "us-east-1"
 
 jobs:
+  # ==========================================
+  # JOBS DA AZURE (Já validados)
+  # ==========================================
   terraform_azure:
     name: "Terraform Azure | ${{ github.event.inputs.environment }}"
     if: github.event.inputs.provider == 'azure'
@@ -48,7 +54,6 @@ jobs:
       - name: 'Checkout'
         uses: actions/checkout@v4
 
-      # --- AQUI ESTÁ A CORREÇÃO ---
       - name: 'Azure Login'
         uses: azure/login@v2
         with:
@@ -65,8 +70,10 @@ jobs:
         run: |
           if [ "${{ github.event.inputs.action }}" == "apply" ]; then
             terraform apply -auto-approve -var="create_environment=true"
-          else
+          elif [ "${{ github.event.inputs.action }}" == "destroy" ]; then
             terraform apply -auto-approve -var="create_environment=false"
+          else
+            terraform force-unlock -force ${{ github.event.inputs.lock_id }}
           fi
         working-directory: ./environments/azure/${{ github.event.inputs.environment }}
 
@@ -89,18 +96,15 @@ jobs:
       - name: 'Checkout'
         uses: actions/checkout@v4
 
-      # Correção também aplicada no segundo job
       - name: 'Azure Login'
         uses: azure/login@v2
         with:
           creds: '{"clientId":"${{ secrets.ARM_CLIENT_ID }}","clientSecret":"${{ secrets.ARM_CLIENT_SECRET }}","subscriptionId":"${{ secrets.ARM_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.ARM_TENANT_ID }}"}'
 
-      - name: 'Abrir SSH no NSG do Bastion'
+      - name: 'Abrir SSH no NSG (JIT)'
         run: |
           RUNNER_IP=$(curl -s ifconfig.me)
-          NSG_NAME="nsg-bastion-${{ github.event.inputs.environment }}"
-          RG_NAME="${{ needs.terraform_azure.outputs.rg_name }}"
-          az network nsg rule create --resource-group $RG_NAME --nsg-name $NSG_NAME \
+          az network nsg rule create --resource-group ${{ needs.terraform_azure.outputs.rg_name }} --nsg-name nsg-bastion-${{ github.event.inputs.environment }} \
             --name AllowRunnerSSH --priority 110 --direction Inbound --access Allow \
             --protocol Tcp --source-address-prefixes $RUNNER_IP --source-port-ranges '*' \
             --destination-address-prefixes '*' --destination-port-ranges 22
@@ -108,47 +112,126 @@ jobs:
       - name: 'Configurar com Ansible'
         run: |
           sudo apt-get update && sudo apt-get install -y ansible jq
-
-          # 1. Preparação da pasta .ssh
-          rm -rf /home/runner/.ssh
-          mkdir -p /home/runner/.ssh
-          chmod 700 /home/runner/.ssh
-
-          # 2. Criação da chave RSA 4096
-          echo "${{ secrets.TCC_ALISSON_AZURE_KEY }}" > /home/runner/.ssh/tcc-alisson-azure-rsa-key
-          chmod 600 /home/runner/.ssh/tcc-alisson-azure-rsa-key
-
+          mkdir -p ~/.ssh
+          echo "${{ secrets.TCC_ALISSON_AZURE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
           BASTION_IP="${{ needs.terraform_azure.outputs.bastion_ip }}"
-          APP_IP=$(echo '${{ needs.terraform_azure.outputs.app_server_ips }}' | jq -r '.[0]')
-
-          echo "Aguardando 60 segundos para estabilidade do SSH e registro do DNS..."
-          sleep 60
-
-          # 3. Teste de Salto (AJUSTADO: Usuário ubuntu)
-          echo "Testando se o Bastion alcança a VM interna ($APP_IP)..."
-          ssh -i /home/runner/.ssh/tcc-alisson-azure-rsa-key -o StrictHostKeyChecking=no \
-            -o ProxyCommand="ssh -i /home/runner/.ssh/tcc-alisson-azure-rsa-key -o StrictHostKeyChecking=no -W %h:%p ubuntu@$BASTION_IP" \
-            ubuntu@$APP_IP "echo 'Salto para VM interna OK!'" || echo "ALERTA: Conexão SSH falhou. Verifique se as VMs aceitaram o usuário ubuntu."
-
-          # 4. Geração do Inventário
           echo "[app_servers]" > inventory.ini
-          echo '${{ needs.terraform_azure.outputs.app_server_ips }}' | jq -r '.[]' | while read ip; do
-            echo "app_server_${ip//./_} ansible_host=$ip" >> inventory.ini
-          done
-
+          echo '${{ needs.terraform_azure.outputs.app_server_ips }}' | jq -r '.[]' | while read ip; do echo "app_server_${ip//./_} ansible_host=$ip" >> inventory.ini; done
           cat <<EOF >> inventory.ini
           [db_servers]
           db-server ansible_host=${{ needs.terraform_azure.outputs.db_server_ip }}
-
           [all:vars]
-          # AJUSTADO: Agora igual à AWS
-          ansible_user=ubuntu 
-          ansible_ssh_private_key_file=/home/runner/.ssh/tcc-alisson-azure-rsa-key
-          # AJUSTADO: ProxyCommand agora usa ubuntu@bastion
-          ansible_ssh_common_args='-o StrictHostKeyChecking=no -o ProxyCommand="ssh -i /home/runner/.ssh/tcc-alisson-azure-rsa-key -o StrictHostKeyChecking=no -W %h:%p ubuntu@$BASTION_IP"'
+          ansible_user=ubuntu
+          ansible_ssh_private_key_file=~/.ssh/id_rsa
+          ansible_ssh_common_args='-o StrictHostKeyChecking=no -o ProxyCommand="ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -W %h:%p ubuntu@$BASTION_IP"'
           EOF
-          
-          # 5. Execução dos Playbooks
           ansible-playbook -i inventory.ini ../../../ansible/playbook_docker.yml -vvv
           ansible-playbook -i inventory.ini ../../../ansible/playbook_nginx_container.yml -e "environment_name=${{ github.event.inputs.environment }}" -vvv
         working-directory: ./environments/azure/${{ github.event.inputs.environment }}
+
+      - name: 'Fechar SSH no NSG'
+        if: always()
+        run: az network nsg rule delete --resource-group ${{ needs.terraform_azure.outputs.rg_name }} --nsg-name nsg-bastion-${{ github.event.inputs.environment }} --name AllowRunnerSSH
+
+  # ==========================================
+  # JOBS DA AWS (Integrados com novo padrão)
+  # ==========================================
+  terraform_aws:
+    name: "Terraform AWS | ${{ github.event.inputs.environment }}"
+    if: github.event.inputs.provider == 'aws'
+    runs-on: ubuntu-latest
+
+    outputs:
+      app_server_ips: ${{ steps.outputs.outputs.app_server_private_ips }}
+      db_server_ip: ${{ steps.outputs.outputs.db_server_private_ip }}
+      bastion_ip: ${{ steps.outputs.outputs.bastion_public_ip }}
+      sg_bastion_id: ${{ steps.outputs.outputs.sg_bastion_id }}
+
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+
+      - name: 'Configure AWS'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: 'Setup Terraform'
+        uses: hashicorp/setup-terraform@v3
+
+      - name: 'Terraform Init'
+        run: terraform init
+        working-directory: ./environments/aws/${{ github.event.inputs.environment }}
+
+      - name: 'Terraform Action'
+        run: |
+          if [ "${{ github.event.inputs.action }}" == "apply" ]; then
+            terraform apply -auto-approve -var="create_environment=true"
+          elif [ "${{ github.event.inputs.action }}" == "destroy" ]; then
+            terraform apply -auto-approve -var="create_environment=false"
+          else
+            terraform force-unlock -force ${{ github.event.inputs.lock_id }}
+          fi
+        working-directory: ./environments/aws/${{ github.event.inputs.environment }}
+
+      - name: 'Get Outputs'
+        if: github.event.inputs.action == 'apply'
+        id: outputs
+        run: |
+          echo "app_server_private_ips=$(terraform output -json app_server_private_ips)" >> $GITHUB_OUTPUT
+          echo "db_server_private_ip=$(terraform output -raw db_server_private_ip)" >> $GITHUB_OUTPUT
+          echo "bastion_public_ip=$(terraform output -raw bastion_public_ip)" >> $GITHUB_OUTPUT
+          echo "sg_bastion_id=$(terraform output -raw sg_bastion_id)" >> $GITHUB_OUTPUT
+        working-directory: ./environments/aws/${{ github.event.inputs.environment }}
+
+  configure_aws_servers:
+    name: 'Ansible AWS ⚙️'
+    needs: terraform_aws
+    if: github.event.inputs.provider == 'aws' && needs.terraform_aws.result == 'success' && github.event.inputs.action == 'apply'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+
+      - name: 'Configure AWS'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: 'Abrir SSH no SG (JIT)'
+        run: |
+          RUNNER_IP=$(curl -s ifconfig.me)
+          aws ec2 authorize-security-group-ingress --group-id ${{ needs.terraform_aws.outputs.sg_bastion_id }} --protocol tcp --port 22 --cidr ${RUNNER_IP}/32
+
+      - name: 'Configurar com Ansible'
+        run: |
+          sudo apt-get update && sudo apt-get install -y ansible jq
+          mkdir -p ~/.ssh
+          echo "${{ secrets.TCC_ALISSON_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          BASTION_IP="${{ needs.terraform_aws.outputs.bastion_ip }}"
+          echo "[app_servers]" > inventory.ini
+          echo '${{ needs.terraform_aws.outputs.app_server_ips }}' | jq -r '.[]' | while read ip; do echo "app_server_${ip//./_} ansible_host=$ip" >> inventory.ini; done
+          cat <<EOF >> inventory.ini
+          [db_servers]
+          db-server ansible_host=${{ needs.terraform_aws.outputs.db_server_ip }}
+          [all:vars]
+          ansible_user=ubuntu
+          ansible_ssh_private_key_file=~/.ssh/id_rsa
+          ansible_ssh_common_args='-o StrictHostKeyChecking=no -o ProxyCommand="ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -W %h:%p ubuntu@$BASTION_IP"'
+          EOF
+          ansible-playbook -i inventory.ini ../../../ansible/playbook_docker.yml -vvv
+          ansible-playbook -i inventory.ini ../../../ansible/playbook_nginx_container.yml -e "environment_name=${{ github.event.inputs.environment }}" -vvv
+        working-directory: ./environments/aws/${{ github.event.inputs.environment }}
+        
+      - name: 'Fechar SSH no SG'
+        if: always()
+        run: |
+          RUNNER_IP=$(curl -s ifconfig.me)
+          aws ec2 revoke-security-group-ingress --group-id ${{ needs.terraform_aws.outputs.sg_bastion_id }} --protocol tcp --port 22 --cidr ${RUNNER_IP}/32
