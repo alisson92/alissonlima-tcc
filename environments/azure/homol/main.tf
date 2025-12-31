@@ -1,5 +1,5 @@
 # =====================================================================
-#   ENVIRONMENTS/AZURE/TESTE/MAIN.TF - VERSÃO MULTICLOUD PADRONIZADA
+#   ENVIRONMENTS/AZURE/HOMOL/MAIN.TF - VERSÃO MULTICLOUD PADRONIZADA
 # =====================================================================
 
 # --- CAMADA 0: RESOURCE GROUP ---
