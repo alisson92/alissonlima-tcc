@@ -2,12 +2,12 @@
 # 1. SECURITY GROUP: BASTION (O Porteiro)
 # ==========================================
 resource "aws_security_group" "bastion" {
-  name        = "sg-tcc-bastion-${var.environment}"
+  name        = "tcc-sg-bastion-${var.environment}"
   description = "Acesso administrativo via Bastion"
   vpc_id      = var.vpc_id
 
   tags = merge(var.tags, {
-    Name = "sg-tcc-bastion-${var.environment}"
+    Name = "tcc-sg-bastion-${var.environment}"
   })
 }
 
@@ -35,12 +35,12 @@ resource "aws_security_group_rule" "bastion_egress" {
 # 2. SECURITY GROUP: ALB (Load Balancer)
 # ==========================================
 resource "aws_security_group" "alb" {
-  name        = "sg-tcc-alb-${var.environment}"
+  name        = "tcc-sg-alb-${var.environment}"
   description = "Acesso Web externo para o Load Balancer"
   vpc_id      = var.vpc_id
 
   tags = merge(var.tags, {
-    Name = "sg-tcc-alb-${var.environment}"
+    Name = "tcc-sg-alb-${var.environment}"
   })
 }
 
@@ -75,12 +75,12 @@ resource "aws_security_group_rule" "alb_egress" {
 # 3. SECURITY GROUP: APPLICATION (App & DB)
 # ==========================================
 resource "aws_security_group" "application" {
-  name        = "sg-tcc-app-${var.environment}"
+  name        = "tcc-sg-app-${var.environment}"
   description = "Regras para App e comunicacao interna de DB"
   vpc_id      = var.vpc_id
 
   tags = merge(var.tags, {
-    Name = "sg-tcc-app-${var.environment}"
+    Name = "tcc-sg-app-${var.environment}"
   })
 }
 
