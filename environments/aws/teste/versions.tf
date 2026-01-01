@@ -4,7 +4,7 @@
 
 terraform {
   # Garante que todos os membros do grupo e o pipeline usem a mesma versão do binário
-  required_version = "~> 1.12.0"
+  required_version = "~> 1.12"
 
   required_providers {
     aws = {
