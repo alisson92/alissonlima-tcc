@@ -64,6 +64,7 @@ jobs:
 
       - name: 'Terraform Init'
         run: terraform init
+
         working-directory: ./environments/azure/${{ github.event.inputs.environment }}
 
       - name: 'Terraform Action'
@@ -75,6 +76,7 @@ jobs:
           else
             terraform force-unlock -force ${{ github.event.inputs.lock_id }}
           fi
+        
         working-directory: ./environments/azure/${{ github.event.inputs.environment }}
 
       - name: 'Get Outputs'
@@ -84,6 +86,7 @@ jobs:
           echo "app_server_private_ips=$(terraform output -json app_server_private_ips)" >> $GITHUB_OUTPUT
           echo "db_server_private_ip=$(terraform output -raw db_server_private_ip)" >> $GITHUB_OUTPUT
           echo "bastion_public_ip=$(terraform output -raw bastion_public_ip)" >> $GITHUB_OUTPUT
+        
         working-directory: ./environments/azure/${{ github.event.inputs.environment }}
 
   configure_azure_servers:
@@ -127,7 +130,8 @@ jobs:
           ansible_ssh_common_args='-o StrictHostKeyChecking=no -o ProxyCommand="ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -W %h:%p ubuntu@$BASTION_IP"'
           EOF
           ansible-playbook -i inventory.ini ../../../ansible/playbook_docker.yml -vvv
-          ansible-playbook -i inventory.ini ../../../ansible/playbook_nginx_container.yml -e "environment_name=${{ github.event.inputs.environment }}" -vvv
+          ansible-playbook -i inventory.ini ../../../ansible/playbook_nginx_container.yml -e "environment_name=${{ github.event.inputs.environment }} cloud_provider=azure" -vvv
+        
         working-directory: ./environments/azure/${{ github.event.inputs.environment }}
 
       - name: 'Fechar SSH no NSG'
@@ -164,6 +168,7 @@ jobs:
 
       - name: 'Terraform Init'
         run: terraform init
+
         working-directory: ./environments/aws/${{ github.event.inputs.environment }}
 
       - name: 'Terraform Action'
@@ -175,6 +180,7 @@ jobs:
           else
             terraform force-unlock -force ${{ github.event.inputs.lock_id }}
           fi
+
         working-directory: ./environments/aws/${{ github.event.inputs.environment }}
 
       - name: 'Get Outputs'
@@ -185,6 +191,7 @@ jobs:
           echo "db_server_private_ip=$(terraform output -raw db_server_private_ip)" >> $GITHUB_OUTPUT
           echo "bastion_public_ip=$(terraform output -raw bastion_public_ip)" >> $GITHUB_OUTPUT
           echo "sg_bastion_id=$(terraform output -raw sg_bastion_id)" >> $GITHUB_OUTPUT
+
         working-directory: ./environments/aws/${{ github.event.inputs.environment }}
 
   configure_aws_servers:
@@ -227,7 +234,8 @@ jobs:
           ansible_ssh_common_args='-o StrictHostKeyChecking=no -o ProxyCommand="ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -W %h:%p ubuntu@$BASTION_IP"'
           EOF
           ansible-playbook -i inventory.ini ../../../ansible/playbook_docker.yml -vvv
-          ansible-playbook -i inventory.ini ../../../ansible/playbook_nginx_container.yml -e "environment_name=${{ github.event.inputs.environment }}" -vvv
+          ansible-playbook -i inventory.ini ../../../ansible/playbook_nginx_container.yml -e "environment_name=${{ github.event.inputs.environment }} cloud_provider=aws" -vvv
+        
         working-directory: ./environments/aws/${{ github.event.inputs.environment }}
         
       - name: 'Fechar SSH no SG'
