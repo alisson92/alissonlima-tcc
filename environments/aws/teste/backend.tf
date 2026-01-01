@@ -1,9 +1,21 @@
+# =====================================================================
+# ENVIRONMENTS/TESTE/BACKEND.TF - ESTADO REMOTO SEGURO (AWS S3)
+# =====================================================================
+
 terraform {
   backend "s3" {
-    bucket         = "alissonlima-tcc-tfstate-backend-2025"
-    key            = "environments/aws/teste/terraform.tfstate"
+    # Nome padronizado e atemporal para o bucket de estado
+    bucket         = "alissonlima-tcc-terraform-state"
+    
+    # Caminho organizado para isolar o estado deste ambiente específico
+    key            = "aws/teste/terraform.tfstate"
+    
     region         = "us-east-1"
-    dynamodb_table = "alissonlima-tcc-terraform-locks"
+    
+    # Tabela DynamoDB para controle de trava (Locking)
+    dynamodb_table = "alissonlima-tcc-terraform-state-lock"
+    
+    # Garante que o arquivo de estado seja criptografado em repouso
     encrypt        = true
   }
 }
