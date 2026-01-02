@@ -25,6 +25,7 @@ module "security" {
 
 # --- CAMADA 3: ARMAZENAMENTO PERSISTENTE ---
 module "data_storage" {
+  count        = var.create_environment ? 1 : 0
   source       = "../../../modules/aws/data_storage"
   environment  = var.environment_name
   # az: Busca dinamicamente do output da rede (us-east-1a)
