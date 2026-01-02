@@ -43,7 +43,7 @@ resource "aws_route53_record" "db_internal" {
   name    = "db-server"
   type    = "A"
   ttl     = "300"
-  records = [module.db_server[0].db_server_private_ip]
+  records = [module.app_environment[0].db_server_private_ip]
 }
 
 resource "aws_route53_record" "app_internal" {
@@ -53,5 +53,5 @@ resource "aws_route53_record" "app_internal" {
   name    = "app-server"
   type    = "A"
   ttl     = "300"
-  records = [module.app_server[0].app_server_private_ips[0]]
+  records = [module.app_environment[0].app_server_private_ips[0]]
 }
