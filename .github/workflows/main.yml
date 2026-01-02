@@ -119,16 +119,31 @@ jobs:
           echo "${{ secrets.TCC_ALISSON_AZURE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           BASTION_IP="${{ needs.terraform_azure.outputs.bastion_ip }}"
-          echo "[app_servers]" > inventory.ini
-          echo '${{ needs.terraform_azure.outputs.app_server_ips }}' | jq -r '.[]' | while read ip; do echo "app_server_${ip//./_} ansible_host=$ip" >> inventory.ini; done
+
+          # 1. Bastion da Azure (Usando o nome padronizado)
+          echo "[bastion_host]" > inventory.ini
+          echo "bastion ansible_host=$BASTION_IP ansible_ssh_common_args='-o StrictHostKeyChecking=no'" >> inventory.ini
+          
+          # 2. Grupo das Apps (CORREÇÃO: Usando '-' em vez de '_')
+          echo "[app_servers]" >> inventory.ini
+          i=0
+          echo '${{ needs.terraform_azure.outputs.app_server_ips }}' | jq -r '.[]' | while read ip; do
+            echo "app-server-$i ansible_host=$ip" >> inventory.ini
+            i=$((i+1))
+          done
+
+          # 3. Grupo do Banco e Variáveis Globais
           cat <<EOF >> inventory.ini
           [db_servers]
           db-server ansible_host=${{ needs.terraform_azure.outputs.db_server_ip }}
+
           [all:vars]
           ansible_user=ubuntu
           ansible_ssh_private_key_file=~/.ssh/id_rsa
           ansible_ssh_common_args='-o StrictHostKeyChecking=no -o ProxyCommand="ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -W %h:%p ubuntu@$BASTION_IP"'
           EOF
+
+          # Execução
           ansible-playbook -i inventory.ini ../../../ansible/playbook_docker.yml -vvv
           ansible-playbook -i inventory.ini ../../../ansible/playbook_nginx_container.yml -e "environment_name=${{ github.event.inputs.environment }} cloud_provider=azure" -vvv
         
