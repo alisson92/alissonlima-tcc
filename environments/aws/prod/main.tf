@@ -46,6 +46,7 @@ module "app_environment" {
   ami_id             = "ami-0a7d80731ae1b2435" # Ubuntu 22.04 LTS
   key_name           = "tcc-alisson-key"
   tags               = var.tags
+  app_server_count    = var.app_server_count
   
   # AZ sincronizada com o volume para permitir o attachment
   db_server_availability_zone = var.create_environment ? module.networking[0].private_subnet_availability_zones[0] : "us-east-1a"

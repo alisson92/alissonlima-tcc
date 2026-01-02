@@ -47,11 +47,11 @@ resource "aws_route53_record" "db_internal" {
 }
 
 resource "aws_route53_record" "app_internal" {
-  count   = var.create_environment ? 1 : 0
+  count   = var.create_environment ? var.app_server_count : 0
 
   zone_id = aws_route53_zone.internal[0].zone_id
-  name    = "app-server"
+  name    = "app-server-${count.index}"
   type    = "A"
   ttl     = "300"
-  records = [module.app_environment[0].app_server_private_ips[0]]
+  records = [module.app_environment[0].app_server_private_ips[count.index]]
 }
