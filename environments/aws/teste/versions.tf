@@ -12,5 +12,10 @@ terraform {
       # Atualizado para uma versão estável de 2025/2026 para suporte total a instâncias T3 e GP3
       version = "~> 5.80.0" 
     }
+
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 4.0" 
+    }
   }
 }

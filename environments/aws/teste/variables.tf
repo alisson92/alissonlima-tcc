@@ -53,3 +53,14 @@ variable "key_name" {
   type        = string
   default     = "tcc-alisson-key"
 }
+
+variable "cloudflare_api_token" {
+  description = "Token de API da Cloudflare com permissão de edição de DNS."
+  type        = string
+  sensitive   = true # Oculta o valor nos logs do GitHub Actions
+}
+
+variable "cloudflare_zone_id" {
+  description = "O ID da Zona (Zone ID) disponível no painel da Cloudflare para o seu domínio."
+  type        = string
+}
