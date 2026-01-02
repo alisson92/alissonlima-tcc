@@ -110,3 +110,9 @@ ssh ubuntu@app-server-1.internal.alissonlima.dev.br
 ```bash
 ssh ubuntu@db-server.internal.alissonlima.dev.br
 ```
+
+### Dicas de Troubleshooting e Padrões
+
+**Prompt do Terminal:** Após o login, as máquinas devem exibir `ubuntu@app-server-X` ou `ubuntu@db-server`, facilitando a identificação imediata do serviço.
+
+**Chaves SSH:** Certifique-se de que sua chave privada correspondente está carregada no seu SSH Agent (Pageant ou `ssh-add`) antes de tentar a conexão com o parâmetro `-A`.
