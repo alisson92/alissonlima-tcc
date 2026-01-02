@@ -1,48 +1,68 @@
-terraform {
-  required_version = "~> 1.12" # Exige uma versão do Terraform igual ou superior a 1.12.0, por exemplo.
+# =====================================================================
+# BACKEND/AWS/MAIN.TF - BOOTSTRAP DO ESTADO REMOTO (S3 + DYNAMODB)
+# =====================================================================
 
+terraform {
+  required_version = "~> 1.12"
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 6.0" # Boa prática: Permite qualquer versão da série 6 (6.0, 6.1, 6.25, etc.)
+      version = "~> 5.80.0" # Mantendo a paridade com o restante do projeto
     }
   }
 }
 
 provider "aws" {
-  region = "us-east-1" # Região padrão para os recursos AWS (N. Virginia).   
+  region = "us-east-1"
 }
 
-#### RECURSOS DO BACKEND ####
-#### Bucket S3 para guardar os arquivos de estado do Terraform ####
-
+# 1. Bucket S3 para o Terraform State
 resource "aws_s3_bucket" "terraform_state" {
-  bucket = "alissonlima-tcc-tfstate-backend-2025" # É o nome da nossa bucket, ele deve ser único em todo o mundo (boa prática inserir um indentificador pessoal).
-
-  ### O parâmetro abaixo garante proteção contra um 'terraform destroy' acidental, que apagaria nosso bucket.
+  bucket = "alissonlima-tcc-terraform-state"
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = true # Proteção vital para não perder o histórico do TCC
+  }
+
+  tags = {
+    Name        = "Terraform State Storage"
+    Project     = "TCC-AlissonLima"
+    Environment = "Global"
   }
 }
 
-### Aqui é criado uma tabela DynamoDB para travar o arquivo de estado (terraform-state) durante a execução.
-### Isso é importante para evitar que duas execuções do Terraform tentem modificar o estado ao mesmo tempo, o que poderia causar corrupção de dados.
-### O nome da tabela deve ser único na região, então é uma boa prática incluir um identificador pessoal no nome.
+# 2. Habilitar Versionamento (Boa prática fundamental de DevOps)
+resource "aws_s3_bucket_versioning" "state_versioning" {
+  bucket = aws_s3_bucket.terraform_state.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
 
+# 3. Criptografia do Bucket (Segurança de Dados)
+resource "aws_s3_bucket_server_side_encryption_configuration" "state_encryption" {
+  bucket = aws_s3_bucket.terraform_state.id
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+# 4. Tabela DynamoDB para State Locking (Evita corrupção de estado)
 resource "aws_dynamodb_table" "terraform_locks" {
-  name         = "alissonlima-tcc-terraform-locks"
-  billing_mode = "PAY_PER_REQUEST" # Modo de cobrança mais econômico para baixo uso, será cobrado somente quando for solicitado.
+  name         = "alissonlima-tcc-terraform-state-lock"
+  billing_mode = "PAY_PER_REQUEST"
   hash_key     = "LockID"
 
   attribute {
     name = "LockID"
     type = "S"
   }
-}
 
-/* O intuito deste arquivo main.tf é criar os recursos necessários para o backend remoto do Terraform na AWS.
-   Esses recursos incluem um bucket S3 para armazenar o arquivo de estado do Terraform (.tfstate) e uma tabela DynamoDB para gerenciar os bloqueios de estado.
-   Isso garante que o estado da infraestrutura seja armazenado de forma centralizada e segura, e que múltiplas execuções do Terraform (por exemplo, por um desenvolvedor e por um pipeline de CI/CD) não corrompam o estado ao tentar modificá-lo simultaneamente.
-   É a prática fundamental para trabalho em equipe e automação robusta.
-*/
+  tags = {
+    Name        = "Terraform State Lock Table"
+    Project     = "TCC-AlissonLima"
+    Environment = "Global"
+  }
+}

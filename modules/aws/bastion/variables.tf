@@ -9,7 +9,7 @@ variable "sg_bastion_id" {
 }
 
 variable "ami_id" {
-  description = "ID da AMI para o Bastion (Ubuntu)."
+  description = "ID da AMI Ubuntu para o Bastion Host."
   type        = string
 }
 
@@ -18,24 +18,13 @@ variable "key_name" {
   type        = string
 }
 
-# --- Adicione estas duas variáveis que estão faltando ---
-variable "zone_id" {
-  description = "ID da Public Hosted Zone no Route 53."
-  type        = string
-}
-
-variable "domain_name" {
-  description = "O nome do seu domínio."
-  type        = string
-}
-
 variable "environment" {
-  description = "Nome do ambiente (ex: teste)."
+  description = "Nome do ambiente (ex: teste, homol, prod) para composição dos nomes."
   type        = string
 }
 
 variable "tags" {
-  description = "Um mapa de tags para ser aplicado nos recursos da rede."
+  description = "Um mapa de tags para ser aplicado aos recursos do Bastion."
   type        = map(string)
   default     = {}
 }

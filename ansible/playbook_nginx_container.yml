@@ -1,11 +1,32 @@
+# --- PLAY 1: PADRONIZAÇÃO GLOBAL (Bastion, App e DB) ---
+- name: Standardize Hostnames across all servers
+  hosts: all
+  become: yes
+  tasks:
+    - name: Set system hostname to match inventory name
+      ansible.builtin.hostname:
+        name: "{{ inventory_hostname }}"
+
+    - name: Update /etc/hosts with new hostname
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: '^127.0.1.1'
+        line: "127.0.1.1 {{ inventory_hostname }}"
+
+    - name: Ensure hostname persists on AWS (Cloud-init)
+      ansible.builtin.lineinfile:
+        path: /etc/cloud/cloud.cfg
+        regexp: '^preserve_hostname'
+        line: 'preserve_hostname: true'
+      when: cloud_provider == 'aws'
+
+# --- PLAY 2: DEPLOY DO NGINX (Apenas Apps) ---
 - name: Deploy Custom Nginx Welcome Page
   hosts: app_servers
   become: yes
   vars:
     environment_name: "default"
-    # Define um caminho fixo e conhecido para o nosso conteúdo web
     web_content_dir: "/opt/nginx/html"
-
   tasks:
     - name: Ensure the web content directory exists
       ansible.builtin.file:
@@ -17,19 +38,18 @@
       ansible.builtin.template:
         src: templates/index.html.j2
         dest: "{{ web_content_dir }}/index.html"
-        owner: root
-        group: root
         mode: '0644'
       vars:
-        url_prefix: "{{ environment_name }}"
+        environment_name: "{{ environment_name }}"
+        cloud_provider: "{{ cloud_provider }}"
 
-    - name: Stop and remove existing nginx container if it exists
+    - name: Stop and remove existing nginx container
       community.docker.docker_container:
         name: nginx-web
         state: absent
       ignore_errors: yes
 
-    - name: Deploy Nginx container with the custom page
+    - name: Deploy Nginx container
       community.docker.docker_container:
         name: nginx-web
         image: nginx:latest
@@ -38,5 +58,4 @@
         ports:
           - "80:80"
         volumes:
-          # <-- MUDANÇA CRÍTICA: Usando o diretório dedicado e a flag de contexto ':z'
           - "{{ web_content_dir }}:/usr/share/nginx/html:ro,z"

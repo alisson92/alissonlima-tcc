@@ -8,18 +8,17 @@ output "vpc_cidr_block_output" {
   value       = aws_vpc.main.cidr_block
 }
 
-output "public_subnet_ids" { # <-- Mudou para plural
-  description = "Lista de IDs das sub-redes publicas."
-  value       = [aws_subnet.public_a.id, aws_subnet.public_b.id]
+output "public_subnet_ids" {
+  description = "Lista de IDs das sub-redes públicas."
+  value       = aws_subnet.public[*].id # Captura todos os IDs da lista criada pelo count
 }
 
-output "private_subnet_ids" { # <-- Mudou para plural
+output "private_subnet_ids" {
   description = "Lista de IDs das sub-redes privadas."
-  value       = [aws_subnet.private_a.id, aws_subnet.private_b.id]
+  value       = aws_subnet.private[*].id # Captura todos os IDs da lista criada pelo count
 }
 
-# --- LINHA ADICIONADA/CORRIGIDA ---
-output "private_subnet_availability_zone" {
-  description = "A Zona de Disponibilidade da primeira sub-rede privada (AZ 'a')."
-  value       = aws_subnet.private_a.availability_zone
+output "private_subnet_availability_zones" {
+  description = "Lista das Zonas de Disponibilidade das sub-redes privadas."
+  value       = aws_subnet.private[*].availability_zone
 }

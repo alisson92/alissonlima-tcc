@@ -1,26 +1,25 @@
 variable "environment" {
-  description = "Nome do ambiente (teste, homol, prod)."
+  description = "Nome do ambiente (teste, homol, prod) para composição dos nomes."
   type        = string
 }
 
-# <-- MUDANÇA: Substituído 'private_subnet_id' pela versão em lista 'private_subnet_ids'
 variable "private_subnet_ids" {
   description = "LISTA de IDs das sub-redes privadas onde os servidores serão criados."
   type        = list(string)
 }
 
 variable "sg_application_id" {
-  description = "ID do Security Group unificado para a aplicacao."
+  description = "ID do Security Group unificado para a aplicação."
   type        = string
 }
 
 variable "instance_type" {
-  description = "Tipo da instancia EC2 para os servidores do ambiente."
+  description = "Tipo da instância EC2 para os servidores do ambiente (Ex: t3.micro)."
   type        = string
 }
 
 variable "ami_id" {
-  description = "ID da Amazon Machine Image (AMI) para usar nos servidores (ex: Ubuntu)."
+  description = "ID da Amazon Machine Image (AMI) Ubuntu para os servidores."
   type        = string
 }
 
@@ -34,18 +33,8 @@ variable "db_volume_id" {
   type        = string
 }
 
-variable "private_zone_id" {
-  description = "ID da Private Hosted Zone no Route 53."
-  type        = string
-}
-
-variable "private_domain_name" {
-  description = "O nome do domínio privado (ex: internal.alissonlima.dev.br)."
-  type        = string
-}
-
 variable "db_server_availability_zone" {
-  description = "A Zona de Disponibilidade para o servidor de banco de dados, para alinhar com o volume EBS."
+  description = "A Zona de Disponibilidade para o servidor de banco, necessária para alinhar com o volume EBS."
   type        = string
 }
 
@@ -56,7 +45,7 @@ variable "tags" {
 }
 
 variable "app_server_count" {
-  description = "O número de servidores de aplicação a serem criados para alta disponibilidade."
+  description = "O número de servidores de aplicação a serem criados (Escalabilidade)."
   type        = number
   default     = 1
 }

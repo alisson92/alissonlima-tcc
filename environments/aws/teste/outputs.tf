@@ -1,30 +1,28 @@
 # =====================================================================
-#   ENVIRONMENTS/TESTE/OUTPUTS.TF - VERSÃO CORRIGIDA E CONSISTENTE
+# ENVIRONMENTS/TESTE/OUTPUTS.TF - ENTREGA DE INFRAESTRUTURA
 # =====================================================================
 
 output "bastion_public_ip" {
-  description = "IP Público do Bastion Host para acesso SSH."
-  value       = var.create_environment ? module.bastion_host[0].bastion_public_ip : "N/A (ambiente destruído)"
+  description = "IP Público do Bastion Host (Use para o ProxyCommand do Ansible)."
+  value       = var.create_environment ? module.bastion_host[0].bastion_public_ip : "N/A"
 }
 
 output "app_server_private_ips" {
-  description = "A LISTA de IPs privados dos servidores de aplicação."
-  # <-- MUDANÇA: Retorna lista vazia para manter o tipo de dado.
+  description = "Lista de IPs privados dos servidores de aplicação para o inventário dinâmico."
   value       = var.create_environment ? module.app_environment[0].app_server_private_ips : []
 }
 
 output "db_server_private_ip" {
   description = "IP Privado do servidor de banco de dados."
-  # <-- CORREÇÃO: A referência ao output do módulo estava incorreta.
-  value       = var.create_environment ? module.app_environment[0].db_server_private_ip : "N/A (ambiente destruído)"
+  value       = var.create_environment ? module.app_environment[0].db_server_private_ip : "N/A"
 }
 
 output "sg_bastion_id" {
-  description = "ID do Security Group do Bastion Host."
-  value       = var.create_environment ? module.security[0].sg_bastion_id : "N/A (ambiente destruído)"
+  description = "ID do Security Group do Bastion (Necessário para abertura dinâmica de porta 22 via CLI)."
+  value       = var.create_environment ? module.security[0].sg_bastion_id : "N/A"
 }
 
-output "alb_dns_name_output" {
-  description = "Endereço DNS do Application Load Balancer."
-  value       = var.create_environment ? "https://${var.alb_dns_name}.${data.aws_route53_zone.primary.name}" : "N/A (ambiente destruído)"
+output "alb_dns_name" {
+  description = "DNS gerado pela AWS para o Load Balancer. Cadastre este valor como CNAME na Cloudflare."
+  value       = var.create_environment ? module.load_balancer[0].alb_dns_name : "N/A"
 }
