@@ -1,12 +1,32 @@
-- name: Deploy Custom Nginx Welcome Page
+- name: Deploy Custom Nginx Welcome Page and Standardize Hostname
   hosts: app_servers
   become: yes
   vars:
     environment_name: "default"
+    cloud_provider: "aws" # Valor padrão caso não seja passado via -e
     # Define um caminho fixo e conhecido para o nosso conteúdo web
     web_content_dir: "/opt/nginx/html"
 
   tasks:
+    # --- PADRONIZAÇÃO DE HOSTNAME ---
+    - name: Set system hostname to match inventory name
+      ansible.builtin.hostname:
+        name: "{{ inventory_hostname }}"
+
+    - name: Update /etc/hosts with new hostname
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: '^127.0.1.1'
+        line: "127.0.1.1 {{ inventory_hostname }}"
+
+    - name: Ensure hostname persists on AWS (Cloud-init)
+      ansible.builtin.lineinfile:
+        path: /etc/cloud/cloud.cfg
+        regexp: '^preserve_hostname'
+        line: 'preserve_hostname: true'
+      when: cloud_provider == 'aws'
+
+    # --- CONFIGURAÇÃO DO CONTEÚDO WEB ---
     - name: Ensure the web content directory exists
       ansible.builtin.file:
         path: "{{ web_content_dir }}"
@@ -21,8 +41,11 @@
         group: root
         mode: '0644'
       vars:
-        url_prefix: "{{ environment_name }}"
+        # Passamos as variáveis necessárias para o seu index.html.j2 dinâmico
+        environment_name: "{{ environment_name }}"
+        cloud_provider: "{{ cloud_provider }}"
 
+    # --- DEPLOY DO CONTAINER ---
     - name: Stop and remove existing nginx container if it exists
       community.docker.docker_container:
         name: nginx-web
@@ -38,5 +61,4 @@
         ports:
           - "80:80"
         volumes:
-          # <-- MUDANÇA CRÍTICA: Usando o diretório dedicado e a flag de contexto ':z'
           - "{{ web_content_dir }}:/usr/share/nginx/html:ro,z"
