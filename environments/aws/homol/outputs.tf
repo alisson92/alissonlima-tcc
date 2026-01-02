@@ -13,7 +13,7 @@ output "app_server_private_ips" {
 }
 
 output "db_server_private_ip" {
-  description = "IP Privado do servidor de banco de dado."
+  description = "IP Privado do servidor de banco de dados."
   value       = var.create_environment ? module.app_environment[0].db_server_private_ip : "N/A"
 }
 
