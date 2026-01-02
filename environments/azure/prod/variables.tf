@@ -1,5 +1,5 @@
 # =====================================================================
-#   ENVIRONMENTS/AZURE/TESTE/VARIABLES.TF - PADRÃO CONSISTENTE TCC
+#   ENVIRONMENTS/AZURE/PROD/VARIABLES.TF - PADRÃO CONSISTENTE TCC
 # =====================================================================
 
 variable "persist_db_volume" {
