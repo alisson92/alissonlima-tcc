@@ -174,9 +174,17 @@ jobs:
       - name: 'Terraform Action'
         run: |
           if [ "${{ github.event.inputs.action }}" == "apply" ]; then
-            terraform apply -auto-approve -var="create_environment=true"
+            terraform apply -auto-approve \
+              -var="create_environment=true" \
+              -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+              -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}"
+
           elif [ "${{ github.event.inputs.action }}" == "destroy" ]; then
-            terraform apply -auto-approve -var="create_environment=false"
+            terraform apply -auto-approve \
+              -var="create_environment=false" \
+              -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+              -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}"
+              
           else
             terraform force-unlock -force ${{ github.event.inputs.lock_id }}
           fi

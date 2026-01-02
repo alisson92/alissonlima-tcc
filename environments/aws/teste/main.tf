@@ -2,10 +2,6 @@
 # ENVIRONMENTS/TESTE/MAIN.TF - ORQUESTRAÇÃO FINAL (PADRÃO 2026)
 # =====================================================================
 
-provider "aws" {
-  region = "us-east-1"
-}
-
 # --- CAMADA 1: REDE ---
 module "networking" {
   count          = var.create_environment ? 1 : 0
