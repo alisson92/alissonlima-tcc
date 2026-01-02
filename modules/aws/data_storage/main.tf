@@ -5,13 +5,11 @@
 resource "aws_ebs_volume" "db_data" {
   availability_zone = var.az
   size              = var.volume_size
-  type              = "gp3" # Performance moderna e custo-benefício para o banco
+  type              = "gp3" # Performance moderna e melhor custo-benefício
 
-  # A TRAVA DE SEGURANÇA VIVE AQUI, PERMANENTEMENTE
-  # Excelente para o TCC: demonstra que o dado sobrevive à destruição da instância.
-  lifecycle {
-    prevent_destroy = false
-  }
+  # REMOVIDO: lifecycle { prevent_destroy = true }
+  # MOTIVO TCC: Padronização com Azure para permitir automação total 
+  # de criação e destruição (Elasticidade e FinOps).
 
   tags = merge(var.tags, {
     Name = "ebs-tcc-db-data-${var.environment}"
