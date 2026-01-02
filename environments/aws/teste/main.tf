@@ -42,7 +42,7 @@ module "app_environment" {
   environment        = var.environment_name
   instance_type      = var.instance_type
   sg_application_id  = module.security[0].sg_application_id
-  db_volume_id       = module.data_storage.volume_id
+  db_volume_id       = module.data_storage[0].volume_id
   ami_id             = "ami-0a7d80731ae1b2435" # Ubuntu 22.04 LTS
   key_name           = "tcc-alisson-key"
   tags               = var.tags
