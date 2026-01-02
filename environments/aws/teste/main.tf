@@ -78,3 +78,9 @@ module "load_balancer" {
   tags              = var.tags
   # certificate_arn removido: SSL offload na Cloudflare
 }
+
+# CORREÇÃO DE ESTADO: Informa ao Terraform que o módulo mudou de endereço
+moved {
+  from = module.data_storage
+  to   = module.data_storage[0]
+}
