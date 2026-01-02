@@ -16,7 +16,7 @@ resource "cloudflare_record" "app_azure" {
 resource "cloudflare_record" "bastion_azure" {
   count   = var.create_environment ? 1 : 0
   zone_id = var.cloudflare_zone_id
-  name    = "bastion-azure-teste"
+  name    = "bastion-azure-homol"
   content = module.bastion_host[0].bastion_public_ip
   type    = "A"
   proxied = false

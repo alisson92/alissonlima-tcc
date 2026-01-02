@@ -35,29 +35,6 @@ module "security" {
   tags                = var.tags
 }
 
-# --- CAMADA 2.6: CONEXÕES EXTERNAS (CLOUDFLARE DNS) ---
-
-# --- REGISTROS INTERNOS (Private DNS) ---
-
-resource "azurerm_private_dns_a_record" "app_internal" {
-  count               = var.create_environment ? var.app_server_count : 0
-  # Se existir mais de um servidor, ele cria app-server-0, app-server-1...
-  name                = var.app_server_count > 1 ? "app-server-${count.index}" : "app-server"
-  zone_name           = module.networking[0].private_dns_zone_name
-  resource_group_name = azurerm_resource_group.main[0].name
-  ttl                 = 300
-  records             = [module.app_environment[0].app_server_private_ips[count.index]]
-}
-
-resource "azurerm_private_dns_a_record" "db_internal" {
-  count               = var.create_environment ? 1 : 0
-  name                = "db-server"
-  zone_name           = module.networking[0].private_dns_zone_name
-  resource_group_name = azurerm_resource_group.main[0].name
-  ttl                 = 300
-  records             = [module.app_environment[0].db_server_private_ip]
-}
-
 # --- CAMADA 3: ARMAZENAMENTO PERSISTENTE ---
 module "data_storage" {
   count               = var.create_environment ? 1 : 0
