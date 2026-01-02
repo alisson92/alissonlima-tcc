@@ -1,8 +1,8 @@
-# Guia de Acesso Administrativo
+# Guia de Acesso Administrativo (Multicloud)
 
 Este documento detalha os procedimentos para acessar a infraestrutura dos ambientes via SSH para os times de Infraestrutura e DevOps.
 
-O acesso aos servidores internos (Aplicação e Banco de Dados) é sempre realizado através de um "salto" pelo **Bastion Host** do respectivo ambiente, utilizando SSH Agent Forwarding (`-A`).
+O acesso aos servidores internos (Aplicação e Banco de Dados) é sempre realizado através de um "salto" pelo **Bastion Host** do respectivo provedor de nuvem, utilizando SSH Agent Forwarding (`-A`).
 
 ---
 
@@ -10,15 +10,27 @@ O acesso aos servidores internos (Aplicação e Banco de Dados) é sempre realiz
 
 ### 1. Conexão ao Bastion Host
 
-O acesso aos servidores internos é feito através do Bastion Host, utilizando SSH Agent Forwarding (`-A`).
+Devido à arquitetura multicloud, cada provedor possui um ponto de entrada específico para evitar conflitos de identidade SSH.
+
+### Acesso via AWS:
 
 ```bash
-ssh -A ubuntu@bastion-teste.alissonlima.dev.br
+ssh -A ubuntu@bastion-aws-teste.alissonlima.dev.br
 ```
 
-### 2. Conexão aos Servidores Internos (a partir do Bastion)
+### Acesso via Azure:
 
-Uma vez dentro do Bastion, use os endereços de DNS privados para acessar os servidores.
+```bash
+ssh -A ubuntu@bastion-azure-teste.alissonlima.dev.br
+```
+
+### Nota de Padronização:
+
+Em ambos os casos, o terminal exibirá o prompt padronizado: `ubuntu@bastion:~$`.
+
+### 2. Conexão aos Servidores Internos (Comandos Idênticos para AWS/Azure)
+
+Uma vez dentro de qualquer Bastion, os comandos para acessar as instâncias internas são exatamente os mesmos, graças à paridade de DNS privado e hostnames.
 
 ### Acessar o Servidor de Aplicação
 
@@ -36,15 +48,21 @@ ssh ubuntu@db-server.internal.alissonlima.dev.br
 
 ### 1. Conexão ao Bastion Host
 
-O processo é o mesmo, mas utilizando o DNS específico de Homologação.
+Seguindo o padrão de segmentação por nuvem.
+
+### AWS:
 
 ```bash
-ssh -A ubuntu@bastion-homol.alissonlima.dev.br
+ssh -A ubuntu@bastion-aws-homol.alissonlima.dev.br
 ```
 
-### 2. Conexão aos Servidores Internos (a partir do Bastion)
+### Azure:
 
-Uma vez dentro do Bastion de homologação, use os respectivos endereços de DNS privados.
+```bash
+ssh -A ubuntu@bastion-azure-homol.alissonlima.dev.br
+```
+
+### 2. Conexão aos Servidores Internos
 
 ### Acessar o Servidor de Aplicação
 
@@ -62,30 +80,39 @@ ssh ubuntu@db-server.internal.alissonlima.dev.br
 
 ### 1. Conexão ao Bastion Host
 
-O processo é o mesmo, mas utilizando o DNS específico de Produção.
+Ponto de entrada único por provedor para o ambiente produtivo.
+
+### AWS:
 
 ```bash
-ssh -A ubuntu@bastion-prod.alissonlima.dev.br
+ssh -A ubuntu@bastion-aws-prod.alissonlima.dev.br
 ```
 
-### 2. Conexão aos Servidores Internos (a partir do Bastion)
+### Azure:
 
-Uma vez dentro do Bastion de produção, use os respectivos endereços de DNS privados.
+```bash
+ssh -A ubuntu@bastion-azure-prod.alissonlima.dev.br
+```
 
-### Acessar o Primeiro Servidor de Aplicação (Nó 0)
+### 2. Conexão aos Servidores Internos
+
+Em produção, o framework suporta múltiplos nós de aplicação para alta disponibilidade.
+
+### Servidores de Aplicação:
 
 ```bash
 ssh ubuntu@app-server-0.internal.alissonlima.dev.br
-```
-
-### Acessar o Segundo Servidor de Aplicação (Nó 1)
-
-```bash
 ssh ubuntu@app-server-1.internal.alissonlima.dev.br
 ```
 
-### Acessar o Servidor de Banco de Dados
+### Servidor de Banco de Dados:
 
 ```bash
 ssh ubuntu@db-server.internal.alissonlima.dev.br
 ```
+
+### Dicas de Troubleshooting e Padrões
+
+**Prompt do Terminal:** Após o login, as máquinas devem exibir `ubuntu@app-server-X` ou `ubuntu@db-server`, facilitando a identificação imediata do serviço.
+
+**Chaves SSH:** Certifique-se de que sua chave privada correspondente está carregada no seu SSH Agent (Pageant ou `ssh-add`) antes de tentar a conexão com o parâmetro `-A`.

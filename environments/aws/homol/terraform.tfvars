@@ -1,13 +1,28 @@
-# environments/aws/homol/terraform.tfvars
+# =====================================================================
+# ENVIRONMENTS/HOMOL/TERRAFORM.TFVARS - VALORES REAIS DO AMBIENTE
+# =====================================================================
+
 environment_name = "homol"
-vpc_cidr_block   = "10.1.0.0/16" // CIDR DIFERENTE, ESSENCIAL!
-instance_type    = "t2.micro"  // Ex: Instância maior
-alb_dns_name     = "homol"
-my_ip            = "45.230.208.30/32" // Seu IP, pode ser o mesmo
+
+# Mudado para 10.60 para não conflitar com a Azure (10.10)
+vpc_cidr_block   = "10.60.0.0/16" 
+
+# t3.micro é a geração atual (mais rápida e barata que a t2)
+instance_type    = "t3.micro" 
+
+# Seu IP para acesso administrativo via Bastion
+my_ip            = "45.230.208.30/32" 
+
+# Quantidade de servidores de aplicação
 app_server_count = 1
 
 tags = {
   Project   = "TCC-AlissonLima"
   ManagedBy = "Terraform"
-  Env       = "homol" // Tag correta
+  Env       = "homol"
 }
+
+# --- Variáveis Adicionais (Centralizadas no Ambiente) ---
+# Caso queira sobrescrever os defaults do variables.tf
+ami_id   = "ami-0a7d80731ae1b2435"
+key_name = "tcc-alisson-key"
