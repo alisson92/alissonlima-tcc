@@ -237,7 +237,7 @@ jobs:
           echo "bastion ansible_host=$BASTION_IP ansible_ssh_common_args='-o StrictHostKeyChecking=no'" >> inventory.ini
 
           # 2. Grupo das Apps
-          echo "[app_servers]" > inventory.ini
+          echo "[app_servers]" >> inventory.ini
           i=0
           echo '${{ needs.terraform_aws.outputs.app_server_ips }}' | jq -r '.[]' | while read ip; do
             echo "app-server-$i ansible_host=$ip" >> inventory.ini
