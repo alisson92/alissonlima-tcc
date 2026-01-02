@@ -32,7 +32,7 @@ resource "aws_route53_zone" "internal" {
   
   name  = "internal.alissonlima.dev.br"
   vpc {
-    vpc_id = module.networking.vpc_id
+    vpc_id = module.networking[0].vpc_id
   }
 }
 
