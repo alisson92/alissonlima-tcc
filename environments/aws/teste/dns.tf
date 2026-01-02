@@ -19,7 +19,7 @@ resource "cloudflare_record" "bastion_aws" {
   count   = var.create_environment ? 1 : 0
 
   zone_id = var.cloudflare_zone_id
-  name    = "bastion-teste"
+  name    = "bastion-aws-teste"
   content = module.bastion_host[0].bastion_public_ip
   type    = "A"
   proxied = false
