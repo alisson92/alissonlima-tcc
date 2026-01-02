@@ -37,32 +37,6 @@ module "security" {
 
 # --- CAMADA 2.6: CONEXÕES EXTERNAS (CLOUDFLARE DNS) ---
 
-resource "cloudflare_record" "azure_site" {
-  count   = var.create_environment ? 1 : 0 
-  zone_id = var.cloudflare_zone_id
-  name    = "${var.environment_name}-azure" 
-  
-  # CORREÇÃO: 'value' alterado para 'content' para evitar o Warning
-  content = one(module.load_balancer[*].lb_public_ip) 
-  
-  type    = "A"
-  proxied = true 
-  ttl     = 1 
-}
-
-resource "cloudflare_record" "bastion_dns" {
-  count   = var.create_environment ? 1 : 0
-  zone_id = var.cloudflare_zone_id
-  name    = "bastion-${var.environment_name}" 
-  
-  # CORREÇÃO: 'value' alterado para 'content'
-  content = one(module.bastion_host[*].bastion_public_ip)
-  
-  type    = "A"
-  proxied = false 
-  ttl     = 1
-}
-
 # --- REGISTROS INTERNOS (Private DNS) ---
 
 resource "azurerm_private_dns_a_record" "app_internal" {
