@@ -10,7 +10,7 @@ resource "aws_ebs_volume" "db_data" {
   # A TRAVA DE SEGURANÇA VIVE AQUI, PERMANENTEMENTE
   # Excelente para o TCC: demonstra que o dado sobrevive à destruição da instância.
   lifecycle {
-    prevent_destroy = false
+    prevent_destroy = true
   }
 
   tags = merge(var.tags, {
