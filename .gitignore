@@ -5,8 +5,7 @@
 # Arquivos de estado NUNCA devem ir para o Git
 *.tfstate
 *.tfstate.*
-*.tfvars
-*.tfvars*
+
 
 # Arquivos de plano podem conter dados sensíveis
 *.tfplan
