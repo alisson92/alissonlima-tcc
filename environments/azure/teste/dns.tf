@@ -8,7 +8,7 @@ resource "cloudflare_record" "app_azure" {
   
   zone_id = var.cloudflare_zone_id
   name    = "teste-azure" # URL: teste-azure.alissonlima.dev.br
-  content = module.load_balancer[0].load_balancer_public_ip
+  content = module.load_balancer[0].lb_public_ip
   type    = "A"
   proxied = true
 }
