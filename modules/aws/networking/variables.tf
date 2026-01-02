@@ -1,15 +1,10 @@
 variable "vpc_cidr_block" {
-  description = "Bloco CIDR para a VPC."
+  description = "Bloco CIDR para a VPC (Ex: 10.50.0.0/16)."
   type        = string
 }
 
 variable "environment" {
-  description = "Nome do ambiente (ex: teste, homol, prod)."
-  type        = string
-}
-
-variable "aws_region" {
-  description = "Região da AWS para criar os recursos."
+  description = "Nome do ambiente para composição dos nomes (Ex: teste, homol, prod)."
   type        = string
 }
 

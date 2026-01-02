@@ -64,17 +64,27 @@ jobs:
 
       - name: 'Terraform Init'
         run: terraform init
+
         working-directory: ./environments/azure/${{ github.event.inputs.environment }}
 
       - name: 'Terraform Action'
         run: |
           if [ "${{ github.event.inputs.action }}" == "apply" ]; then
-            terraform apply -auto-approve -var="create_environment=true"
+            terraform apply -auto-approve \
+              -var="create_environment=true" \
+              -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+              -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}"
+
           elif [ "${{ github.event.inputs.action }}" == "destroy" ]; then
-            terraform apply -auto-approve -var="create_environment=false"
+            terraform apply -auto-approve \
+              -var="create_environment=false" \
+              -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+              -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}"
+              
           else
             terraform force-unlock -force ${{ github.event.inputs.lock_id }}
           fi
+        
         working-directory: ./environments/azure/${{ github.event.inputs.environment }}
 
       - name: 'Get Outputs'
@@ -84,6 +94,7 @@ jobs:
           echo "app_server_private_ips=$(terraform output -json app_server_private_ips)" >> $GITHUB_OUTPUT
           echo "db_server_private_ip=$(terraform output -raw db_server_private_ip)" >> $GITHUB_OUTPUT
           echo "bastion_public_ip=$(terraform output -raw bastion_public_ip)" >> $GITHUB_OUTPUT
+        
         working-directory: ./environments/azure/${{ github.event.inputs.environment }}
 
   configure_azure_servers:
@@ -116,18 +127,34 @@ jobs:
           echo "${{ secrets.TCC_ALISSON_AZURE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           BASTION_IP="${{ needs.terraform_azure.outputs.bastion_ip }}"
-          echo "[app_servers]" > inventory.ini
-          echo '${{ needs.terraform_azure.outputs.app_server_ips }}' | jq -r '.[]' | while read ip; do echo "app_server_${ip//./_} ansible_host=$ip" >> inventory.ini; done
+
+          # 1. Bastion da Azure (Usando o nome padronizado)
+          echo "[bastion_host]" > inventory.ini
+          echo "bastion ansible_host=$BASTION_IP ansible_ssh_common_args='-o StrictHostKeyChecking=no'" >> inventory.ini
+          
+          # 2. Grupo das Apps (CORREÇÃO: Usando '-' em vez de '_')
+          echo "[app_servers]" >> inventory.ini
+          i=0
+          echo '${{ needs.terraform_azure.outputs.app_server_ips }}' | jq -r '.[]' | while read ip; do
+            echo "app-server-$i ansible_host=$ip" >> inventory.ini
+            i=$((i+1))
+          done
+
+          # 3. Grupo do Banco e Variáveis Globais
           cat <<EOF >> inventory.ini
           [db_servers]
           db-server ansible_host=${{ needs.terraform_azure.outputs.db_server_ip }}
+
           [all:vars]
           ansible_user=ubuntu
           ansible_ssh_private_key_file=~/.ssh/id_rsa
           ansible_ssh_common_args='-o StrictHostKeyChecking=no -o ProxyCommand="ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -W %h:%p ubuntu@$BASTION_IP"'
           EOF
+
+          # Execução
           ansible-playbook -i inventory.ini ../../../ansible/playbook_docker.yml -vvv
-          ansible-playbook -i inventory.ini ../../../ansible/playbook_nginx_container.yml -e "environment_name=${{ github.event.inputs.environment }}" -vvv
+          ansible-playbook -i inventory.ini ../../../ansible/playbook_nginx_container.yml -e "environment_name=${{ github.event.inputs.environment }} cloud_provider=azure" -vvv
+        
         working-directory: ./environments/azure/${{ github.event.inputs.environment }}
 
       - name: 'Fechar SSH no NSG'
@@ -164,17 +191,27 @@ jobs:
 
       - name: 'Terraform Init'
         run: terraform init
+
         working-directory: ./environments/aws/${{ github.event.inputs.environment }}
 
       - name: 'Terraform Action'
         run: |
           if [ "${{ github.event.inputs.action }}" == "apply" ]; then
-            terraform apply -auto-approve -var="create_environment=true"
+            terraform apply -auto-approve \
+              -var="create_environment=true" \
+              -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+              -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}"
+
           elif [ "${{ github.event.inputs.action }}" == "destroy" ]; then
-            terraform apply -auto-approve -var="create_environment=false"
+            terraform apply -auto-approve \
+              -var="create_environment=false" \
+              -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+              -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}"
+              
           else
             terraform force-unlock -force ${{ github.event.inputs.lock_id }}
           fi
+
         working-directory: ./environments/aws/${{ github.event.inputs.environment }}
 
       - name: 'Get Outputs'
@@ -185,6 +222,7 @@ jobs:
           echo "db_server_private_ip=$(terraform output -raw db_server_private_ip)" >> $GITHUB_OUTPUT
           echo "bastion_public_ip=$(terraform output -raw bastion_public_ip)" >> $GITHUB_OUTPUT
           echo "sg_bastion_id=$(terraform output -raw sg_bastion_id)" >> $GITHUB_OUTPUT
+
         working-directory: ./environments/aws/${{ github.event.inputs.environment }}
 
   configure_aws_servers:
@@ -216,18 +254,34 @@ jobs:
           echo "${{ secrets.TCC_ALISSON_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           BASTION_IP="${{ needs.terraform_aws.outputs.bastion_ip }}"
-          echo "[app_servers]" > inventory.ini
-          echo '${{ needs.terraform_aws.outputs.app_server_ips }}' | jq -r '.[]' | while read ip; do echo "app_server_${ip//./_} ansible_host=$ip" >> inventory.ini; done
+
+          # 1. Incluindo o Bastion Host (Importante: Sem ProxyCommand para ele mesmo)
+          echo "[bastion_host]" > inventory.ini
+          echo "bastion ansible_host=$BASTION_IP ansible_ssh_common_args='-o StrictHostKeyChecking=no'" >> inventory.ini
+
+          # 2. Grupo das Apps
+          echo "[app_servers]" >> inventory.ini
+          i=0
+          echo '${{ needs.terraform_aws.outputs.app_server_ips }}' | jq -r '.[]' | while read ip; do
+            echo "app-server-$i ansible_host=$ip" >> inventory.ini
+            i=$((i+1))
+          done
+          
+          # 3. Grupo do Banco e Variáveis Globais
           cat <<EOF >> inventory.ini
           [db_servers]
           db-server ansible_host=${{ needs.terraform_aws.outputs.db_server_ip }}
+
           [all:vars]
           ansible_user=ubuntu
           ansible_ssh_private_key_file=~/.ssh/id_rsa
           ansible_ssh_common_args='-o StrictHostKeyChecking=no -o ProxyCommand="ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -W %h:%p ubuntu@$BASTION_IP"'
           EOF
+
+          # Roda os playbooks passando a nuvem
           ansible-playbook -i inventory.ini ../../../ansible/playbook_docker.yml -vvv
-          ansible-playbook -i inventory.ini ../../../ansible/playbook_nginx_container.yml -e "environment_name=${{ github.event.inputs.environment }}" -vvv
+          ansible-playbook -i inventory.ini ../../../ansible/playbook_nginx_container.yml -e "environment_name=${{ github.event.inputs.environment }} cloud_provider=aws" -vvv
+        
         working-directory: ./environments/aws/${{ github.event.inputs.environment }}
         
       - name: 'Fechar SSH no SG'

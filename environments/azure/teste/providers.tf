@@ -7,8 +7,3 @@ provider "cloudflare" {
 provider "azurerm" {
   features {}
 }
-
-# Configuração do Provedor AWS
-provider "aws" {
-  region = "us-east-1"
-}

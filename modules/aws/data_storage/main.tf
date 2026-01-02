@@ -1,15 +1,17 @@
-# --- Disco Persistente para o Banco de Dados (O "Volume") ---
-resource "aws_ebs_volume" "db_data" {
-  availability_zone = var.db_server_availability_zone
-  size              = 10 
-  type              = "gp3"
+# =====================================================================
+# MÓDULO DATA_STORAGE - PERSISTÊNCIA DE DADOS (EBS)
+# =====================================================================
 
-  # A TRAVA DE SEGURANÇA VIVE AQUI, PERMANENTEMENTE
-  lifecycle {
-    prevent_destroy = true
-  }
+resource "aws_ebs_volume" "db_data" {
+  availability_zone = var.az
+  size              = var.volume_size
+  type              = "gp3" # Performance moderna e melhor custo-benefício
+
+  # REMOVIDO: lifecycle { prevent_destroy = true }
+  # MOTIVO TCC: Padronização com Azure para permitir automação total 
+  # de criação e destruição (Elasticidade e FinOps).
 
   tags = merge(var.tags, {
-    Name = "ebs-db-data-${var.environment}"
+    Name = "ebs-tcc-db-data-${var.environment}"
   })
 }
