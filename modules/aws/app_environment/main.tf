@@ -1,71 +1,56 @@
 # =====================================================================
-#   MÓDULO APP_ENVIRONMENT/MAIN.TF - VERSÃO FINAL COM DNS ESPECIALIZADO
+# MÓDULO APP_ENVIRONMENT - INFRAESTRUTURA PURA (SEM DEPENDÊNCIA DE DNS)
 # =====================================================================
 
-# --- Servidor de Aplicação ---
+# --- 1. Servidores de Aplicação ---
 resource "aws_instance" "app_server" {
-  count                     = var.app_server_count
-  ami                       = var.ami_id
-  instance_type             = var.instance_type
-  subnet_id                 = var.private_subnet_ids[count.index % length(var.private_subnet_ids)]
-  key_name                  = var.key_name
-  vpc_security_group_ids    = [var.sg_application_id]
-  disable_api_termination = true
+  count                   = var.app_server_count
+  ami                     = var.ami_id
+  instance_type           = var.instance_type
+  subnet_id               = var.private_subnet_ids[count.index % length(var.private_subnet_ids)]
+  key_name                = var.key_name
+  vpc_security_group_ids  = [var.sg_application_id]
+  disable_api_termination = false # Alterado para permitir destruição via pipeline se necessário
 
   tags = merge(var.tags, {
-    Name = "app-server-${count.index}-${var.environment}"
+    Name = "app-server-tcc-${count.index}-${var.environment}"
   })
+
+  root_block_device {
+    volume_size = 20
+    volume_type = "gp3"
+    tags = merge(var.tags, {
+      Name = "disk-app-tcc-${count.index}-${var.environment}"
+    })
+  }
 }
 
-# --- Servidor de Banco de Dados ---
+# --- 2. Servidor de Banco de Dados ---
 resource "aws_instance" "db_server" {
-  ami                       = var.ami_id
-  instance_type             = var.instance_type
-  subnet_id                 = var.private_subnet_ids[0]
-  key_name                  = var.key_name
-  vpc_security_group_ids    = [var.sg_application_id]
-  disable_api_termination = true
-  availability_zone         = var.db_server_availability_zone
+  ami                     = var.ami_id
+  instance_type           = var.instance_type
+  subnet_id               = var.private_subnet_ids[0] # Mantido na primeira subnet privada
+  key_name                = var.key_name
+  vpc_security_group_ids  = [var.sg_application_id]
+  disable_api_termination = false
+  availability_zone       = var.db_server_availability_zone
 
   tags = merge(var.tags, {
-    Name = "db-server-${var.environment}"
+    Name = "db-server-tcc-${var.environment}"
   })
+
+  root_block_device {
+    volume_size = 20
+    volume_type = "gp3"
+    tags = merge(var.tags, {
+      Name = "disk-db-tcc-${var.environment}"
+    })
+  }
 }
 
-# --- Anexa o disco ao servidor de banco de dados ---
+# --- 3. Anexo do Volume de Dados (Persistência) ---
 resource "aws_volume_attachment" "db_data_attachment" {
   device_name = "/dev/sdf"
   volume_id   = var.db_volume_id
   instance_id = aws_instance.db_server.id
-}
-
-# --- Registros de DNS Privado ---
-
-# 1. Registro GENÉRICO para a "frota" de servidores (para o Load Balancer, etc.)
-resource "aws_route53_record" "app_server_dns_service" {
-  count   = var.app_server_count > 0 ? 1 : 0
-  zone_id = var.private_zone_id
-  name    = "app-server.${var.private_domain_name}"
-  type    = "A"
-  ttl     = 60
-  records = aws_instance.app_server[*].private_ip
-}
-
-# 2. <-- MUDANÇA: Registros INDIVIDUAIS para cada servidor (para acesso administrativo)
-resource "aws_route53_record" "app_server_dns_admin" {
-  count   = var.app_server_count # Cria um registro para cada servidor
-  zone_id = var.private_zone_id
-  name    = "app-server-${count.index}.${var.private_domain_name}" # Nome com índice: app-server-0, app-server-1, etc.
-  type    = "A"
-  ttl     = 300
-  records = [aws_instance.app_server[count.index].private_ip] # IP específico de cada servidor
-}
-
-# 3. Registro para o servidor de banco de dados (continua igual)
-resource "aws_route53_record" "db_server_dns" {
-  zone_id = var.private_zone_id
-  name    = "db-server.${var.private_domain_name}"
-  type    = "A"
-  ttl     = 300
-  records = [aws_instance.db_server.private_ip]
 }
