@@ -19,6 +19,7 @@ resource "aws_instance" "app_server" {
   root_block_device {
     volume_size = 20
     volume_type = "gp3"
+    encrypted   = true
     tags = merge(var.tags, {
       Name = "disk-app-tcc-${count.index}-${var.environment}"
     })
@@ -42,6 +43,7 @@ resource "aws_instance" "db_server" {
   root_block_device {
     volume_size = 20
     volume_type = "gp3"
+    encrypted   = true
     tags = merge(var.tags, {
       Name = "disk-db-tcc-${var.environment}"
     })
