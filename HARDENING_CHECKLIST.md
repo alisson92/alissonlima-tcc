@@ -58,13 +58,19 @@
 ## 🟠 Alto
 
 ### 2. Discos EBS (AWS) sem criptografia em repouso
-- [ ] **Status:** pendente
+- [x] **Status:** resolvido
 - **Tipo:** security
-- **Local:** `modules/aws/app_environment/main.tf`, `modules/aws/data_storage/main.tf`
-- **Problema:** Nenhum `aws_ebs_volume`/`root_block_device` define `encrypted = true`.
+- **Local:** `modules/aws/bastion/main.tf`, `modules/aws/app_environment/main.tf`, `modules/aws/data_storage/main.tf`
+- **Problema:** Nenhum `aws_ebs_volume`/`root_block_device` definia `encrypted = true`.
 - **Impacto:** Dados do DB e demais volumes em texto plano em repouso.
-- **Commit:** —
-- **Notas:** —
+- **Commit:** `f95e73a` (bastion), `cd50f13` (app_environment: app_server + db_server), `3350ef9` (data_storage)
+- **Notas:** Adicionado `encrypted = true` em todos os `root_block_device` (bastion,
+  app_server, db_server) e no `aws_ebs_volume.db_data`, usando a chave KMS gerenciada
+  padrão da AWS (`alias/aws/ebs`, implícita — sem `kms_key_id` customizado). Azure não
+  precisou de alteração: managed disks já são criptografados por padrão pela
+  plataforma. **Atenção ao aplicar em ambientes já provisionados:** mudar `encrypted`
+  força replacement do disco (destroy + create), então o próximo `apply` em
+  teste/homol/prod vai recriar essas instâncias/volumes.
 
 ### 3. NSG do ALB (Azure) sem associação de subnet (regra morta)
 - [ ] **Status:** pendente
@@ -218,6 +224,6 @@
 | Severidade | Qtd | Resolvidos |
 |---|---|---|
 | Crítico | 1 | 1 |
-| Alto | 5 | 0 |
+| Alto | 5 | 1 |
 | Médio | 7 | 0 |
 | Baixo | 3 | 0 |
