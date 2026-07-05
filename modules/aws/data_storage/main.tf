@@ -6,6 +6,7 @@ resource "aws_ebs_volume" "db_data" {
   availability_zone = var.az
   size              = var.volume_size
   type              = "gp3" # Performance moderna e melhor custo-benefício
+  encrypted         = true
 
   # REMOVIDO: lifecycle { prevent_destroy = true }
   # MOTIVO TCC: Padronização com Azure para permitir automação total 
