@@ -18,17 +18,39 @@
 ## 🔴 Crítico
 
 ### 1. `terraform.tfvars` versionado no Git em repositório público
-- [ ] **Status:** pendente
+- [x] **Status:** resolvido
 - **Tipo:** security
 - **Local:** `environments/{aws,azure}/{teste,homol,prod}/terraform.tfvars`
-- **Problema:** `.gitignore` proíbe `*.tfvars`, mas os 6 arquivos estão rastreados no Git,
-  e o repositório `alisson92/alissonlima-tcc` é **público**. Expõe IP residencial real
-  (`REDACTED_IP/32`), chave SSH pública completa, `key_name` do AWS Key Pair
-  (`tcc-alisson-key`) e AMI ID fixo.
+- **Problema:** `.gitignore` proíbe `*.tfvars`, mas os 6 arquivos estavam rastreados no Git,
+  e o repositório `alisson92/alissonlima-tcc` é **público**. Expunha IP residencial real,
+  chave SSH pública completa, `key_name` do AWS Key Pair (`tcc-alisson-key`) e AMI ID fixo.
 - **Impacto:** Reconhecimento/engenharia social contra os ambientes prod; dados já
-  estão no histórico do Git (remover do working tree não basta).
-- **Commit:** —
-- **Notas:** —
+  estavam no histórico do Git (remover do working tree não bastava).
+- **Commit:** histórico reescrito via `git filter-repo` (não é um único commit —
+  todas as branches remotas tiveram os SHAs reescritos e foram `push --force`d);
+  arquivos `.example` adicionados em `efac4e0`, `3eaf2b9`, `5201dd4`, `d83b330`,
+  `2cc7f84`, `c5924c2`; ajuste do `.gitignore` em `1fa9d75`.
+- **Notas:** Remediação em duas frentes:
+  1. `git filter-repo --invert-paths` removeu os 6 `terraform.tfvars` de **todo o
+     histórico**, em `main`, `develop` e `chore/project-hardening-and-cleanup`
+     (os blobs são compartilhados entre branches, não dá para limpar só uma).
+     Segunda passada com `--replace-text` redigiu o IP real (`REDACTED_IP`) que
+     também aparecia hardcoded em commits antigos de `environments/aws/teste/main.tf`
+     antes do refactor para variáveis, e neste próprio checklist.
+  2. `git push --force --all origin` reescreveu o histórico remoto — qualquer
+     clone/fork antigo fica dessincronizado e precisa ser re-clonado.
+  3. Os 6 `terraform.tfvars` reais foram restaurados **localmente** (não
+     versionados, cobertos pelo `.gitignore`) a partir de um backup feito antes da
+     reescrita, para não quebrar o `plan`/`apply` local.
+  4. Criados `terraform.tfvars.example` para os 6 ambientes com placeholders
+     (`YOUR_IP_ADDRESS`, `ami-xxxxxxxxxxxxxxxxx`, `your-aws-key-pair-name`, chave
+     SSH de exemplo), documentando as variáveis esperadas sem repetir dados reais.
+  5. A chave SSH pública completa não precisou de redação adicional no histórico:
+     conferido que ela só existia dentro dos próprios `terraform.tfvars` já
+     removidos (0 ocorrências em outros arquivos/commits).
+  6. `key_name` (`tcc-alisson-key`) e o AMI ID **não** foram redigidos do histórico
+     — são apenas identificadores de recurso, não credenciais, e continuam
+     presentes no código atual (`environments/aws/*/main.tf`) de forma legítima.
 
 ---
 
@@ -194,7 +216,7 @@
 
 | Severidade | Qtd | Resolvidos |
 |---|---|---|
-| Crítico | 1 | 0 |
+| Crítico | 1 | 1 |
 | Alto | 5 | 0 |
 | Médio | 7 | 0 |
 | Baixo | 3 | 0 |
