@@ -34,7 +34,8 @@
   1. `git filter-repo --invert-paths` removeu os 6 `terraform.tfvars` de **todo o
      histórico**, em `main`, `develop` e `chore/project-hardening-and-cleanup`
      (os blobs são compartilhados entre branches, não dá para limpar só uma).
-     Segunda passada com `--replace-text` redigiu o IP real (`REDACTED_IP`) que
+     Segunda passada com `--replace-text` redigiu o IP real (substituído por
+     `REDACTED_IP`) que
      também aparecia hardcoded em commits antigos de `environments/aws/teste/main.tf`
      antes do refactor para variáveis, e neste próprio checklist.
   2. `git push --force --all origin` reescreveu o histórico remoto — qualquer
