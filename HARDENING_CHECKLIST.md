@@ -73,14 +73,26 @@
   teste/homol/prod vai recriar essas instâncias/volumes.
 
 ### 3. NSG do ALB (Azure) sem associação de subnet (regra morta)
-- [ ] **Status:** pendente
+- [x] **Status:** resolvido
 - **Tipo:** best-practice / refactor
-- **Local:** `modules/azure/security/main.tf` (bloco comentado ~linhas 126-133)
-- **Problema:** `azurerm_network_security_group.alb` é criado mas nunca associado a
+- **Local:** `modules/azure/security/main.tf`, `modules/azure/security/outputs.tf`
+- **Problema:** `azurerm_network_security_group.alb` era criado mas nunca associado a
   nenhuma subnet.
 - **Impacto:** Falsa sensação de segurança; recurso órfão gerando confusão.
-- **Commit:** —
-- **Notas:** —
+- **Commit:** `14d828e` (remove o NSG e as regras), `b58bac1` (remove o output `nsg_alb_id`)
+- **Notas:** Investigação mostrou que isso não era um "esqueceram de associar" —
+  é estrutural: o `azurerm_lb` usado aqui é SKU Standard com IP público direto, que
+  não fica dentro de nenhuma subnet (diferente do ALB da AWS). Não existe traffic
+  path real que passe pela subnet candidata (`public_b`, que está vazia). A proteção
+  de fato do tráfego HTTP nas VMs já é feita pelo NSG `application`
+  (`AllowHTTPInbound` + `AllowAzureLoadBalancerProbe`), corretamente associado às
+  subnets privadas. Decisão do usuário: remover o recurso órfão em vez de forçar uma
+  associação cosmética sem efeito real de proteção.
+  **Novo achado (fora do escopo deste item, para avaliação futura):** a subnet
+  `azurerm_subnet.public_b` (`modules/azure/networking/main.tf`) ficou sem nenhum
+  uso após esta remoção — nunca teve NIC, LB ou NSG associado. Candidata a um novo
+  item de limpeza (remover a subnet ou documentar por que ela existe) se o usuário
+  quiser tratar depois.
 
 ### 4. NSG da aplicação (Azure) libera porta 80 para `"*"` em subnet privada
 - [ ] **Status:** pendente
@@ -224,6 +236,6 @@
 | Severidade | Qtd | Resolvidos |
 |---|---|---|
 | Crítico | 1 | 1 |
-| Alto | 5 | 1 |
+| Alto | 5 | 2 |
 | Médio | 7 | 0 |
 | Baixo | 3 | 0 |
