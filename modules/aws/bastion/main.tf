@@ -19,7 +19,8 @@ resource "aws_instance" "bastion_host" {
     volume_size           = 20
     volume_type           = "gp3"
     delete_on_termination = true
-    
+    encrypted             = true
+
     tags = merge(var.tags, {
       Name = "disk-bastion-tcc-${var.environment}"
     })
