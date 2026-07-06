@@ -173,14 +173,19 @@
 ## 🟡 Médio
 
 ### 7. Repositório Docker aponta para `focal` em hosts `jammy`
-- [ ] **Status:** pendente
+- [x] **Status:** resolvido
 - **Tipo:** obsolescence
 - **Local:** `ansible/playbook_docker.yml`
-- **Problema:** `apt_repository` usa `focal` (Ubuntu 20.04) enquanto os hosts rodam
+- **Problema:** `apt_repository` usava `focal` (Ubuntu 20.04) enquanto os hosts rodam
   22.04 "jammy".
-- **Impacto:** Funciona por acaso hoje; não garantido em atualizações futuras do repo Docker.
-- **Commit:** —
-- **Notas:** —
+- **Impacto:** Funcionava por acaso; não era garantido em atualizações futuras do repo Docker.
+- **Commit:** `7672f11`
+- **Notas:** Em vez de trocar o literal fixo `focal` por `jammy` (resolveria só o
+  sintoma atual e reintroduziria o mesmo problema numa futura migração de distro),
+  usado o fact dinâmico `{{ ansible_distribution_release }}` — mesmo padrão que a
+  documentação oficial do Docker recomenda (`$(lsb_release -cs)`). Resolve a causa
+  raiz: o codename correto é sempre derivado do host real. `ansible-playbook
+  --syntax-check` passou; confirmado que o playbook não desativa `gather_facts`.
 
 ### 8. Módulo `ansible.builtin.apt_key` deprecated
 - [ ] **Status:** pendente
@@ -281,5 +286,5 @@
 |---|---|---|---|
 | Crítico | 1 | 1 | 0 |
 | Alto | 5 | 4 | 1 |
-| Médio | 7 | 0 | 0 |
+| Médio | 7 | 1 | 0 |
 | Baixo | 3 | 0 | 0 |
