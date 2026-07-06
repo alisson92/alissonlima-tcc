@@ -205,13 +205,22 @@
   vazio.
 
 ### 9. Imagem `nginx:latest` (tag mutável)
-- [ ] **Status:** pendente
+- [x] **Status:** resolvido
 - **Tipo:** best-practice
 - **Local:** `ansible/playbook_nginx_container.yml`
 - **Problema:** Gatilho de alerta próprio do usuário (evitar tag `latest`).
 - **Impacto:** Builds não reprodutíveis.
-- **Commit:** —
-- **Notas:** —
+- **Commit:** `0f2e886`
+- **Notas:** Consultada a API pública do Docker Hub
+  (`hub.docker.com/v2/repositories/library/nginx/tags`) em 2026-07-06 para saber o
+  que `latest` resolvia naquele momento: `latest` e `mainline` apontavam para o
+  mesmo digest (versão `1.31.2`, branch mainline/desenvolvimento), enquanto `stable`
+  apontava para outro digest (versão `1.30.3`, branch stable). Ou seja,
+  `nginx:latest` na prática seguia a branch mainline, não a stable. Pinado para
+  `nginx:1.30.3` (branch stable, mesmo flavor Debian já em uso — não trocado para
+  `-alpine`, que mudaria o flavor da imagem além do escopo deste item).
+  **Atenção:** como é uma versão fixa, precisará de atualização manual periódica
+  (não há automação de bump de versão de imagem neste projeto).
 
 ### 10. Ausência de VPC Flow Logs / NSG Flow Logs
 - [ ] **Status:** pendente
@@ -293,5 +302,5 @@
 |---|---|---|---|
 | Crítico | 1 | 1 | 0 |
 | Alto | 5 | 4 | 1 |
-| Médio | 7 | 2 | 0 |
+| Médio | 7 | 3 | 0 |
 | Baixo | 3 | 0 | 0 |
