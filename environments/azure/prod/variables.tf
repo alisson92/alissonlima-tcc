@@ -23,6 +23,7 @@ variable "environment_name" {
 variable "vnet_cidr_block" {
   description = "O bloco de IPs para a Virtual Network (VNet) do ambiente Azure."
   type        = string
+  default     = "10.40.0.0/16"
 }
 
 variable "instance_type" {
