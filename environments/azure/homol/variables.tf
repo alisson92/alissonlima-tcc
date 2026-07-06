@@ -35,7 +35,7 @@ variable "instance_type" {
 variable "lb_dns_name" {
   description = "O subdomínio a ser criado no DNS para o Load Balancer."
   type        = string
-  default     = "teste"
+  default     = "homol"
 }
 
 variable "tags" {
