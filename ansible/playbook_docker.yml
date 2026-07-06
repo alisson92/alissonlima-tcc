@@ -13,14 +13,21 @@
         name: ['ca-certificates', 'curl', 'gnupg']
         state: present
 
-    - name: Adicionar a chave GPG oficial do Docker
-      ansible.builtin.apt_key:
+    - name: Garantir que o diretório de keyrings existe
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Baixar a chave GPG oficial do Docker
+      ansible.builtin.get_url:
         url: https://download.docker.com/linux/ubuntu/gpg
-        state: present
+        dest: /etc/apt/keyrings/docker.asc
+        mode: '0644'
 
     - name: Adicionar o repositório do Docker
       ansible.builtin.apt_repository:
-        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
         state: present
 
     - name: Instalar Docker Engine, CLI e containerd
