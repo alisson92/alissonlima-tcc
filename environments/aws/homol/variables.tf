@@ -42,12 +42,6 @@ variable "app_server_count" {
 
 # --- Boas Práticas Adicionais para o TCC ---
 
-variable "ami_id" {
-  description = "ID da AMI Ubuntu para garantir consistência entre as instâncias."
-  type        = string
-  default     = "ami-0a7d80731ae1b2435"
-}
-
 variable "key_name" {
   description = "Nome do par de chaves SSH criado no console da AWS."
   type        = string
