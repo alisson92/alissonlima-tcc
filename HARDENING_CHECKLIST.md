@@ -116,13 +116,27 @@
   código para deixar claro que é uma decisão consciente, não um descuido.
 
 ### 5. Provider `azurerm` travado em `~> 3.0` (major desatualizada)
-- [ ] **Status:** pendente
+- [x] **Status:** resolvido
 - **Tipo:** obsolescence
 - **Local:** `backend/azure/main.tf`, `environments/azure/*/versions.tf`
-- **Problema:** Major 4.x disponível há tempo; v3 não recebe mais correções recentes.
+- **Problema:** Major 4.x disponível há tempo; v3 não recebia mais correções recentes.
 - **Impacto:** Risco de fim de suporte; migração fica mais dolorosa quanto mais adiada.
-- **Commit:** —
-- **Notas:** —
+- **Commit:** `536eacc` (backend), `f996286` (teste), `77126d8` (homol), `ca68b0e` (prod)
+- **Notas:** Atualizado para `~> 4.80.0` (versão mais recente resolvida via
+  `terraform init -upgrade` no momento da correção), no mesmo estilo de pin de
+  patch já usado para o provider AWS (`~> 5.80.0`). Levantamento de todos os
+  `azurerm_*` usados no projeto não encontrou nenhum recurso com mudança de schema
+  quebradora conhecida entre v3→v4. A principal mudança de comportamento do v4
+  (provider só registra um conjunto "core" de Resource Providers do Azure por
+  padrão, em vez de registrar tudo como o v3) não deve afetar este projeto, já que
+  a subscription já provisiona esses tipos de recurso há tempo (registro de RP é
+  estado da subscription, não da versão do provider). `terraform validate` passou
+  nos 3 ambientes e no `backend/azure` com o provider novo.
+  **Atenção antes de aplicar em ambientes reais:** esta sessão não tinha
+  credenciais Azure, então não foi possível rodar `terraform plan` contra a
+  infraestrutura existente. Recomendado rodar `terraform plan` (sem apply) em
+  `teste` primeiro para conferir que não há diffs inesperados do upgrade de major,
+  antes de aplicar em `homol`/`prod`.
 
 ### 6. AMI AWS hardcoded sem mecanismo de atualização
 - [ ] **Status:** pendente
@@ -247,6 +261,6 @@
 | Severidade | Qtd | Resolvidos | Aceitos |
 |---|---|---|---|
 | Crítico | 1 | 1 | 0 |
-| Alto | 5 | 2 | 1 |
+| Alto | 5 | 3 | 1 |
 | Médio | 7 | 0 | 0 |
 | Baixo | 3 | 0 | 0 |
