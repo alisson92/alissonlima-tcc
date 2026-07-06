@@ -24,6 +24,13 @@ resource "aws_instance" "app_server" {
       Name = "disk-app-tcc-${count.index}-${var.environment}"
     })
   }
+
+  # Força IMDSv2, mitigando SSRF contra o metadata service
+  metadata_options {
+    http_tokens                 = "required"
+    http_endpoint               = "enabled"
+    http_put_response_hop_limit = 1
+  }
 }
 
 # --- 2. Servidor de Banco de Dados ---
@@ -47,6 +54,13 @@ resource "aws_instance" "db_server" {
     tags = merge(var.tags, {
       Name = "disk-db-tcc-${var.environment}"
     })
+  }
+
+  # Força IMDSv2, mitigando SSRF contra o metadata service
+  metadata_options {
+    http_tokens                 = "required"
+    http_endpoint               = "enabled"
+    http_put_response_hop_limit = 1
   }
 }
 
