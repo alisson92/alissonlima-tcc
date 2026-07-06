@@ -223,13 +223,29 @@
   (não há automação de bump de versão de imagem neste projeto).
 
 ### 10. Ausência de VPC Flow Logs / NSG Flow Logs
-- [ ] **Status:** pendente
+- [x] **Status:** aceito (adiado, comportamento inalterado)
 - **Tipo:** best-practice
 - **Local:** `modules/aws/networking/`, `modules/azure/networking/`
-- **Problema:** Nenhum `aws_flow_log` nem Network Watcher flow logs configurado.
+- **Problema:** Nenhum `aws_flow_log` nem Network Watcher flow logs configurado —
+  os Security Groups/NSGs decidem allow/deny mas não guardam nenhum registro dessas
+  decisões, então não há trilha de auditoria para investigar tráfego suspeito ou
+  tentativas de acesso indevido.
 - **Impacto:** Sem trilha de auditoria de rede para investigação de incidentes.
-- **Commit:** —
-- **Notas:** —
+- **Commit:** — (nenhuma mudança de infraestrutura)
+- **Notas:** Discutido com o usuário o que a correção envolveria: na AWS,
+  `aws_flow_log` + um CloudWatch Log Group + uma IAM Role para o serviço de flow
+  logs publicar nele; na Azure, o recurso `azurerm_network_watcher_flow_log`
+  (confirmado via `terraform providers schema` no provider `azurerm ~> 4.80.0`)
+  usando `target_resource_id` apontando para a VNet — **não**
+  `network_security_group_id` (NSG Flow Log clássico), já que esse recurso legado
+  tem fim de suporte anunciado pela Microsoft; VNet Flow Log é o caminho
+  recomendado hoje. Em ambos os casos seria necessário criar recursos novos
+  (destino de armazenamento + permissões) em cada um dos 3 ambientes × 2 clouds.
+  **Decisão do usuário: adiar esta correção por ora** — é um projeto acadêmico
+  (TCC) e o custo/complexidade adicional (armazenamento de logs, IAM, Network
+  Watcher) não se justifica no momento. Se implementado no futuro, os pontos de
+  decisão a resolver são: tipo de tráfego capturado (`ALL` vs `REJECT`-only, mais
+  barato e focado em tentativas bloqueadas) e período de retenção dos logs.
 
 ### 11. Sem enforcement de IMDSv2 nas instâncias EC2
 - [ ] **Status:** pendente
@@ -302,5 +318,5 @@
 |---|---|---|---|
 | Crítico | 1 | 1 | 0 |
 | Alto | 5 | 4 | 1 |
-| Médio | 7 | 3 | 0 |
+| Médio | 7 | 3 | 1 |
 | Baixo | 3 | 0 | 0 |
