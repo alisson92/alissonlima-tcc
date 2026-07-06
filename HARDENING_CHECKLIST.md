@@ -248,13 +248,22 @@
   barato e focado em tentativas bloqueadas) e período de retenção dos logs.
 
 ### 11. Sem enforcement de IMDSv2 nas instâncias EC2
-- [ ] **Status:** pendente
+- [x] **Status:** resolvido
 - **Tipo:** security
 - **Local:** `modules/aws/bastion/main.tf`, `modules/aws/app_environment/main.tf`
 - **Problema:** Ausência de `metadata_options { http_tokens = "required" }`.
 - **Impacto:** Superfície de SSRF que captura credenciais de instance profile via IMDSv1.
-- **Commit:** —
-- **Notas:** —
+- **Commit:** `e7494ca` (bastion), `afd8012` (app_environment: app_server + db_server)
+- **Notas:** Adicionado bloco `metadata_options` nas 3 instâncias (`bastion_host`,
+  `app_server`, `db_server`) com `http_tokens = "required"` (força IMDSv2,
+  desativando IMDSv1 que não exige token) e `http_put_response_hop_limit = 1`
+  (limite padrão da AWS, deixado explícito por clareza — relevante aqui porque as
+  instâncias rodam Docker, e um hop limit maior permitiria que containers também
+  acessassem o metadata service). `http_endpoint = "enabled"` mantém o serviço
+  disponível, já que nada no Ansible depende de acesso irrestrito via IMDSv1.
+  `terraform validate` passou em `environments/aws/teste`. Mudança é update
+  in-place (não força replacement de instância), mas mesmo assim recomenda-se
+  `terraform plan` antes de aplicar em ambientes já provisionados.
 
 ### 12. `required_version` do Terraform inconsistente
 - [ ] **Status:** pendente
@@ -318,5 +327,5 @@
 |---|---|---|---|
 | Crítico | 1 | 1 | 0 |
 | Alto | 5 | 4 | 1 |
-| Médio | 7 | 3 | 1 |
+| Médio | 7 | 4 | 1 |
 | Baixo | 3 | 0 | 0 |
