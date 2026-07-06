@@ -29,7 +29,17 @@ resource "azurerm_network_security_group" "application" {
   location            = var.location
   resource_group_name = var.resource_group_name
 
-  # AJUSTE: Permite tráfego HTTP de qualquer origem (necessário pois o LB preserva o IP)
+  # RISCO ACEITO (revisado no hardening do TCC, item #4 do HARDENING_CHECKLIST.md):
+  # Esta subnet é privada, mas o tráfego web público real chega aqui vindo de fora
+  # da VNet. Caminho: cliente -> Cloudflare (proxied, TLS termina lá) -> nova conexão
+  # HTTP da borda da Cloudflare para o IP público do Azure LB -> o Standard LB
+  # preserva o IP de origem no caminho de entrada (sem SNAT) -> este NSG enxerga o
+  # IP da Cloudflare, que é externo à VNet. Por isso "VirtualNetwork" quebraria o
+  # acesso público real, e "*" é usado deliberadamente. A mitigação mais forte seria
+  # restringir source_address_prefixes às faixas de IP publicadas pela Cloudflare
+  # (cloudflare.com/ips), mas isso foi conscientemente adiado para não introduzir a
+  # dependência de manter essa lista atualizada — hoje a Cloudflare + WAF já filtra
+  # boa parte do tráfego malicioso antes de chegar ao origin.
   security_rule {
     name                       = "AllowHTTPInbound"
     priority                   = 100
