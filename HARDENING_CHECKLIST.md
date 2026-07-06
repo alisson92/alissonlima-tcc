@@ -266,13 +266,17 @@
   `terraform plan` antes de aplicar em ambientes já provisionados.
 
 ### 12. `required_version` do Terraform inconsistente
-- [ ] **Status:** pendente
+- [x] **Status:** resolvido
 - **Tipo:** refactor / best-practice
 - **Local:** `backend/azure/main.tf` (`>= 1.0.0`) vs. resto do projeto (`~> 1.12`)
 - **Problema:** Bootstrap da Azure não segue o mesmo pin de versão dos ambientes.
 - **Impacto:** Divergência silenciosa de versão do binário Terraform.
-- **Commit:** —
-- **Notas:** —
+- **Commit:** `f8ca38a`
+- **Notas:** Grep confirmou que `backend/azure/main.tf` era o único arquivo do
+  projeto ainda usando `>= 1.0.0` — todos os `environments/*/versions.tf` e
+  `backend/aws/main.tf` já usavam `~> 1.12`. Alinhado para o mesmo pin. Como
+  `required_version` só afeta o binário CLI local (não gera diff de
+  `plan`/`apply`), não há necessidade de validar contra infraestrutura real.
 
 ### 13. README desatualizado em relação à arquitetura atual
 - [ ] **Status:** pendente
@@ -327,5 +331,5 @@
 |---|---|---|---|
 | Crítico | 1 | 1 | 0 |
 | Alto | 5 | 4 | 1 |
-| Médio | 7 | 4 | 1 |
+| Médio | 7 | 5 | 1 |
 | Baixo | 3 | 0 | 0 |
