@@ -6,6 +6,7 @@
 
 ![Terraform](https://img.shields.io/badge/terraform-%235835CC.svg?style=for-the-badge&logo=terraform&logoColor=white)
 ![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white)
+![Azure](https://img.shields.io/badge/azure-%230072C6.svg?style=for-the-badge&logo=microsoftazure&logoColor=white)
 ![Ansible](https://img.shields.io/badge/ansible-%231A1918.svg?style=for-the-badge&logo=ansible&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/github%20actions-%232671E5.svg?style=for-the-badge&logo=githubactions&logoColor=white)
 
@@ -15,27 +16,45 @@ Este repositório contém o Trabalho de Conclusão de Curso (TCC) para o curso d
 
 A solução é um framework de automação que utiliza as melhores práticas de mercado (DevOps, IaC) para criar ambientes de aplicação completos (Teste, Homologação e Produção) de forma 100% automatizada, garantindo agilidade, segurança e consistência entre eles.
 
-## 🏛️ Arquitetura da Solução (AWS)
+## 🏛️ Arquitetura da Solução (Multi-Cloud: AWS & Azure)
 
 **Nota:** É altamente recomendável inserir aqui um diagrama visual da arquitetura.
 
-A infraestrutura provisionada na AWS segue um design de alta disponibilidade e segurança, distribuída em múltiplas Zonas de Disponibilidade. Os componentes principais são:
+A infraestrutura é provisionada de forma equivalente em **AWS** e **Azure**, cada uma
+seguindo o mesmo design de 6 módulos (networking, security, data_storage,
+app_environment, bastion, load_balancer). AWS e Azure **não** compartilham código —
+`modules/aws/*` e `modules/azure/*` são implementações paralelas e independentes do
+mesmo desenho, escolhidas via input `provider` no pipeline. Cada ambiente é
+distribuído em múltiplas Zonas de Disponibilidade. Os componentes principais são:
 
-* **Rede (VPC):** Uma VPC customizada com sub-redes públicas (para recursos de front-end como Load Balancer e Bastion Host) e privadas (para recursos de back-end como servidores de aplicação e banco de dados), garantindo o isolamento da camada de dados.
-* **Computação (EC2):** A arquitetura é composta por instâncias EC2 para:
+* **Rede (VPC/VNet):** Uma rede customizada com sub-redes públicas (para recursos de
+  front-end como Load Balancer e Bastion Host) e privadas (para recursos de back-end
+  como servidores de aplicação e banco de dados), garantindo o isolamento da camada
+  de dados.
+* **Computação (EC2/VM):** A arquitetura é composta por instâncias de computação para:
     * **Bastion Host:** Ponto de entrada seguro para acesso administrativo.
-    * **Servidor de Aplicação:** Onde a aplicação principal é executada.
-    * **Servidor de Banco de Dados:** Isalado na rede privada para máxima segurança.
-* **Acesso e DNS (Route 53):** O Route 53 gerencia os nomes de DNS públicos (para a aplicação e o Bastion) e privados (para a comunicação interna entre os serviços).
-* **Segurança (Security Groups):** Regras de firewall granulares que seguem o princípio do menor privilégio, permitindo apenas a comunicação estritamente necessária entre os componentes.
-* **Balanceamento de Carga (ALB):** Um Application Load Balancer serve como ponto de entrada único para a aplicação, distribuindo o tráfego e utilizando um certificado SSL/TLS para comunicação segura (HTTPS).
+    * **Servidor(es) de Aplicação:** Onde a aplicação principal é executada.
+    * **Servidor de Banco de Dados:** Isolado na rede privada para máxima segurança.
+* **DNS público (Cloudflare):** O DNS público (aplicação e Bastion) é gerenciado pelo
+  provider **Cloudflare**, com proxy habilitado para a aplicação — é na Cloudflare
+  que o SSL/TLS é terminado, não no Load Balancer.
+* **DNS privado (Route 53 / Azure Private DNS):** Resolve nomes internos
+  (`db-server`, `app-server-N`) para comunicação entre os servidores, sem tráfego
+  saindo para a internet pública.
+* **Segurança (Security Groups / NSGs):** Regras de firewall granulares que seguem o
+  princípio do menor privilégio, referenciando-se por ID (não por CIDR aberto) entre
+  bastion, load balancer e camada de aplicação/banco.
+* **Balanceamento de Carga (ALB / Azure LB):** Ponto de entrada único para a
+  aplicação, recebendo tráfego HTTP já descriptografado da borda da Cloudflare e
+  distribuindo entre os servidores de aplicação.
 
 ## 🛠️ Tecnologias Utilizadas
 
 * **Terraform:** Para a declaração da infraestrutura como código (IaC).
 * **Ansible:** Para o gerenciamento de configuração pós-provisionamento (instalação de Docker, etc.).
 * **GitHub Actions:** Como plataforma de orquestração e CI/CD para automação do fluxo de trabalho.
-* **AWS (Amazon Web Services):** Como provedor de nuvem principal.
+* **AWS (Amazon Web Services) & Azure:** Como provedores de nuvem, com ambientes equivalentes em ambos.
+* **Cloudflare:** Para DNS público e terminação de SSL/TLS.
 * **Git & GitFlow:** Para versionamento de código e estratégia de branches.
 
 ## 📁 Estrutura do Repositório
@@ -43,17 +62,32 @@ A infraestrutura provisionada na AWS segue um design de alta disponibilidade e s
 O projeto é organizado de forma modular para máxima reutilização e clareza:
 
 ```bash
-├── .github/workflows/    # Contém os pipelines de CI/CD (GitHub Actions)
+├── .github/workflows/    # Contém o pipeline de CI/CD (GitHub Actions)
 ├── ansible/              # Contém os playbooks de configuração do Ansible
 ├── environments/         # Onde a infraestrutura é efetivamente executada
 │   ├── aws/
-│   │   ├── teste/        # Arquivos de configuração para o ambiente de Teste
-│   │   └── homol/        # Arquivos de configuração para o ambiente de Homologação
+│   │   ├── teste/        # Ambiente de Teste (AWS)
+│   │   ├── homol/        # Ambiente de Homologação (AWS)
+│   │   └── prod/         # Ambiente de Produção (AWS)
+│   └── azure/
+│       ├── teste/        # Ambiente de Teste (Azure)
+│       ├── homol/        # Ambiente de Homologação (Azure)
+│       └── prod/         # Ambiente de Produção (Azure)
 ├── modules/              # Blocos de construção reutilizáveis da infraestrutura
 │   ├── aws/
-│   │   ├── networking/   # Módulo para criar a VPC, sub-redes, etc.
-│   │   ├── security/     # Módulo para criar os Security Groups
-│   │   └── ...           # Outros módulos
+│   │   ├── networking/       # VPC, sub-redes públicas/privadas
+│   │   ├── security/         # Security Groups
+│   │   ├── data_storage/     # Volume persistente do banco de dados
+│   │   ├── app_environment/  # Servidor(es) de aplicação + banco de dados
+│   │   ├── bastion/          # Bastion Host
+│   │   └── load_balancer/    # Application Load Balancer
+│   └── azure/
+│       ├── networking/       # VNet, subnets públicas/privadas
+│       ├── security/         # NSGs
+│       ├── data_storage/     # Managed Disk do banco de dados
+│       ├── app_environment/  # Servidor(es) de aplicação + banco de dados
+│       ├── bastion/          # Bastion Host
+│       └── load_balancer/    # Azure Load Balancer
 └── ...
 ```
 
@@ -62,12 +96,13 @@ O projeto é organizado de forma modular para máxima reutilização e clareza:
 Todo o ciclo de vida da infraestrutura (criação e destruição) é gerenciado exclusivamente pelo pipeline do GitHub Actions.
 
 1.  Navegue até a aba **"Actions"** no repositório do GitHub.
-2.  Na lista de workflows à esquerda, selecione **"Terraform TCC Pipeline"**.
+2.  Na lista de workflows à esquerda, selecione **"Orquestrador Multicloud TCC (Azure & AWS)"**.
 3.  Clique no botão **"Run workflow"**.
 4.  Selecione a **branch** que contém o código a ser executado.
-5.  No menu **"Ambiente a ser gerenciado"**, escolha o ambiente desejado (ex: `homol`).
-6.  No menu **"Ação a ser executada"**, escolha `apply` (para criar/atualizar) ou `destroy` (para destruir).
-7.  Clique no botão verde **"Run workflow"** para iniciar a automação.
+5.  No menu **"Provedor de Nuvem"**, escolha `azure` ou `aws`.
+6.  No menu **"Ambiente"**, escolha o ambiente desejado (`teste`, `homol` ou `prod`).
+7.  No menu **"Ação"**, escolha `apply` (para criar/atualizar), `destroy` (para destruir) ou `force-unlock` (para liberar um state lock preso, informando o `Lock ID`).
+8.  Clique no botão verde **"Run workflow"** para iniciar a automação.
 
 ## 🔑 Acesso Administrativo
 

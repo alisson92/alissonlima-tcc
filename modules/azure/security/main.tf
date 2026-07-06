@@ -23,46 +23,23 @@ resource "azurerm_network_security_group" "bastion" {
   tags = var.tags
 }
 
-# 2. NSG para o Load Balancer (Abertura para a Internet/Cloudflare)
-resource "azurerm_network_security_group" "alb" {
-  name                = "nsg-alb-${var.environment}"
-  location            = var.location
-  resource_group_name = var.resource_group_name
-
-  security_rule {
-    name                       = "AllowHTTPInbound"
-    priority                   = 100
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "80"
-    source_address_prefix      = "*" # Permite que a Cloudflare/Internet chegue ao LB
-    destination_address_prefix = "*"
-  }
-
-  security_rule {
-    name                       = "AllowHTTPSInbound"
-    priority                   = 110
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "443"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
-
-  tags = var.tags
-}
-
-# 3. NSG para a APLICAÇÃO (Ajustado para receber tráfego externo)
+# 2. NSG para a APLICAÇÃO (Ajustado para receber tráfego externo)
 resource "azurerm_network_security_group" "application" {
   name                = "nsg-application-${var.environment}"
   location            = var.location
   resource_group_name = var.resource_group_name
 
-  # AJUSTE: Permite tráfego HTTP de qualquer origem (necessário pois o LB preserva o IP)
+  # RISCO ACEITO (revisado no hardening do TCC, item #4 do HARDENING_CHECKLIST.md):
+  # Esta subnet é privada, mas o tráfego web público real chega aqui vindo de fora
+  # da VNet. Caminho: cliente -> Cloudflare (proxied, TLS termina lá) -> nova conexão
+  # HTTP da borda da Cloudflare para o IP público do Azure LB -> o Standard LB
+  # preserva o IP de origem no caminho de entrada (sem SNAT) -> este NSG enxerga o
+  # IP da Cloudflare, que é externo à VNet. Por isso "VirtualNetwork" quebraria o
+  # acesso público real, e "*" é usado deliberadamente. A mitigação mais forte seria
+  # restringir source_address_prefixes às faixas de IP publicadas pela Cloudflare
+  # (cloudflare.com/ips), mas isso foi conscientemente adiado para não introduzir a
+  # dependência de manter essa lista atualizada — hoje a Cloudflare + WAF já filtra
+  # boa parte do tráfego malicioso antes de chegar ao origin.
   security_rule {
     name                       = "AllowHTTPInbound"
     priority                   = 100
@@ -122,15 +99,6 @@ resource "azurerm_subnet_network_security_group_association" "bastion" {
   subnet_id                 = var.public_subnet_ids[0]
   network_security_group_id = azurerm_network_security_group.bastion.id
 }
-
-# ASSOCIAÇÃO DO ALB (Faltava no seu código)
-# Importante: Se o seu LB estiver na mesma subnet do Bastion, 
-# você precisará unificar as regras em um único NSG.
-# Assumindo que você tem uma subnet dedicada ao LB ou quer proteger a pública:
-# resource "azurerm_subnet_network_security_group_association" "alb" {
-#   subnet_id                 = var.public_subnet_ids[1] # Use a subnet correta aqui
-#   network_security_group_id = azurerm_network_security_group.alb.id
-# }
 
 resource "azurerm_subnet_network_security_group_association" "app_a" {
   subnet_id                 = var.private_subnet_ids[0]

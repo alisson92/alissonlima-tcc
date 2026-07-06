@@ -52,7 +52,7 @@
     - name: Deploy Nginx container
       community.docker.docker_container:
         name: nginx-web
-        image: nginx:latest
+        image: nginx:1.30.3
         state: started
         restart_policy: always
         ports:

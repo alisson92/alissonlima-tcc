@@ -17,12 +17,13 @@ variable "create_environment" {
 variable "environment_name" {
   description = "O nome do ambiente (ex: teste, homol, prod)."
   type        = string
-  default     = "teste" # Valor padrão para agilizar o deploy
+  default     = "prod" # Valor padrão para agilizar o deploy
 }
 
 variable "vnet_cidr_block" {
   description = "O bloco de IPs para a Virtual Network (VNet) do ambiente Azure."
   type        = string
+  default     = "10.40.0.0/16"
 }
 
 variable "instance_type" {
@@ -34,7 +35,7 @@ variable "instance_type" {
 variable "lb_dns_name" {
   description = "O subdomínio a ser criado no DNS para o Load Balancer."
   type        = string
-  default     = "teste"
+  default     = "prod"
 }
 
 variable "tags" {
@@ -51,7 +52,7 @@ variable "my_ip" {
 variable "app_server_count" {
   description = "Número de servidores de aplicação para este ambiente."
   type        = number
-  default     = 1
+  default     = 2
 }
 
 # --- AJUSTES PARA PADRONIZAÇÃO E INDEPENDÊNCIA AZURE ---

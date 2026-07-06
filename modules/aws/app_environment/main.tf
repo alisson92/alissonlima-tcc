@@ -19,9 +19,17 @@ resource "aws_instance" "app_server" {
   root_block_device {
     volume_size = 20
     volume_type = "gp3"
+    encrypted   = true
     tags = merge(var.tags, {
       Name = "disk-app-tcc-${count.index}-${var.environment}"
     })
+  }
+
+  # Força IMDSv2, mitigando SSRF contra o metadata service
+  metadata_options {
+    http_tokens                 = "required"
+    http_endpoint               = "enabled"
+    http_put_response_hop_limit = 1
   }
 }
 
@@ -42,9 +50,17 @@ resource "aws_instance" "db_server" {
   root_block_device {
     volume_size = 20
     volume_type = "gp3"
+    encrypted   = true
     tags = merge(var.tags, {
       Name = "disk-db-tcc-${var.environment}"
     })
+  }
+
+  # Força IMDSv2, mitigando SSRF contra o metadata service
+  metadata_options {
+    http_tokens                 = "required"
+    http_endpoint               = "enabled"
+    http_put_response_hop_limit = 1
   }
 }
 
