@@ -1,0 +1,33 @@
+# =====================================================================
+# ENVIRONMENTS/AZURE/TESTE/TERRAFORM.TFVARS.EXAMPLE - TEMPLATE (SEM VALORES REAIS)
+# =====================================================================
+# Copie este arquivo para terraform.tfvars e preencha com seus valores.
+# terraform.tfvars é ignorado pelo Git (.gitignore) e nunca deve ser commitado.
+
+# --- Lógica de Controle (Padrão TCC) ---
+create_environment = true
+persist_db_volume  = true
+
+# --- Definições do Ambiente ---
+environment_name = "teste"
+vnet_cidr_block  = "10.20.0.0/16"
+location         = "eastus"
+instance_type    = "Standard_B1s"
+app_server_count = 1
+
+# --- Redes e Segurança ---
+# Seu IP público para acesso administrativo via Bastion (formato CIDR /32)
+my_ip            = "YOUR_IP_ADDRESS/32"
+
+# --- DNS e Acesso ---
+lb_dns_name           = "teste"
+private_dns_zone_name = "internal.alissonlima.dev.br"
+# Cole o conteúdo COMPLETO da sua chave pública SSH (id_rsa.pub) abaixo
+public_key            = "ssh-rsa AAAA... your-public-key-here"
+
+# --- Metadados e Tags ---
+tags = {
+  Project   = "TCC-AlissonLima-Azure"
+  ManagedBy = "Terraform"
+  Env       = "teste"
+}

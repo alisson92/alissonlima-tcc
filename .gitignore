@@ -6,7 +6,8 @@
 *.tfstate
 *.tfstate.*
 *.tfvars
-*.tfvars*
+*.tfvars.*
+!*.tfvars.example
 
 # Arquivos de plano podem conter dados sensíveis
 *.tfplan

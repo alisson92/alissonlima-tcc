@@ -11,16 +11,19 @@ variable "create_environment" {
 variable "environment_name" {
   description = "O nome do ambiente (ex: teste, homol, prod)."
   type        = string
+  default     = "prod"
 }
 
 variable "vpc_cidr_block" {
   description = "O bloco de IPs para a VPC (Ex: 10.70.0.0/16)."
   type        = string
+  default     = "10.70.0.0/16"
 }
 
 variable "instance_type" {
   description = "O tipo da instância EC2 (t3.micro, t3.small, etc)."
   type        = string
+  default     = "t3.micro"
 }
 
 variable "tags" {
@@ -37,16 +40,10 @@ variable "my_ip" {
 variable "app_server_count" {
   description = "Número de servidores de aplicação para escalabilidade."
   type        = number
-  default     = 1
+  default     = 2
 }
 
 # --- Boas Práticas Adicionais para o TCC ---
-
-variable "ami_id" {
-  description = "ID da AMI Ubuntu para garantir consistência entre as instâncias."
-  type        = string
-  default     = "ami-0a7d80731ae1b2435"
-}
 
 variable "key_name" {
   description = "Nome do par de chaves SSH criado no console da AWS."

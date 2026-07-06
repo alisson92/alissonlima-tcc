@@ -19,9 +19,17 @@ resource "aws_instance" "bastion_host" {
     volume_size           = 20
     volume_type           = "gp3"
     delete_on_termination = true
-    
+    encrypted             = true
+
     tags = merge(var.tags, {
       Name = "disk-bastion-tcc-${var.environment}"
     })
+  }
+
+  # Força IMDSv2, mitigando SSRF contra o metadata service
+  metadata_options {
+    http_tokens                 = "required"
+    http_endpoint               = "enabled"
+    http_put_response_hop_limit = 1
   }
 }

@@ -17,12 +17,13 @@ variable "create_environment" {
 variable "environment_name" {
   description = "O nome do ambiente (ex: teste, homol, prod)."
   type        = string
-  default     = "teste" # Valor padrão para agilizar o deploy
+  default     = "homol" # Valor padrão para agilizar o deploy
 }
 
 variable "vnet_cidr_block" {
   description = "O bloco de IPs para a Virtual Network (VNet) do ambiente Azure."
   type        = string
+  default     = "10.30.0.0/16"
 }
 
 variable "instance_type" {
@@ -34,7 +35,7 @@ variable "instance_type" {
 variable "lb_dns_name" {
   description = "O subdomínio a ser criado no DNS para o Load Balancer."
   type        = string
-  default     = "teste"
+  default     = "homol"
 }
 
 variable "tags" {
