@@ -330,14 +330,23 @@
   sessão para captura de tela, então a inspeção foi via leitura do HTML renderizado.
 
 ### 15. `docker-compose` v2.27.0 fixado via download manual do GitHub
-- [ ] **Status:** pendente
+- [x] **Status:** resolvido
 - **Tipo:** obsolescence
 - **Local:** `ansible/playbook_docker.yml`
 - **Problema:** Já reconhecido no comentário do próprio playbook; duplica o mecanismo
   do plugin oficial já instalado via `apt`.
 - **Impacto:** Potencial desatualização e duplicação de mecanismo de instalação.
-- **Commit:** —
-- **Notas:** —
+- **Commit:** `866d204`
+- **Notas:** O repositório oficial do Docker (`download.docker.com/linux/ubuntu`) já
+  estava configurado para `docker-ce`/`docker-ce-cli`/`containerd.io`, mas o Compose
+  v2 continuava fixado manualmente via `get_url` direto de uma release do GitHub
+  (v2.27.0), com o próprio playbook reconhecendo em comentário que a versão
+  precisava ser conferida manualmente. Substituído por `docker-compose-plugin`, pacote
+  oficial do mesmo repo já em uso — instalado e atualizado pelo `apt` junto com o
+  Engine, sem mecanismo duplicado. Confirmado por grep que nenhum outro
+  script/playbook do repositório invoca o binário standalone `docker-compose`
+  (hífen), então a migração para o subcomando `docker compose` (plugin, sem hífen)
+  não quebra nada. `ansible-playbook --syntax-check` passou.
 
 ### 16. `disable_api_termination = false` em prod
 - [ ] **Status:** pendente
@@ -358,4 +367,4 @@
 | Crítico | 1 | 1 | 0 |
 | Alto | 5 | 4 | 1 |
 | Médio | 7 | 6 | 1 |
-| Baixo | 3 | 1 | 0 |
+| Baixo | 3 | 2 | 0 |
