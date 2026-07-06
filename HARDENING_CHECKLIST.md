@@ -121,6 +121,34 @@
   seguidas. `terraform validate` passou em homol/prod após o fix; YAML do workflow
   validado com `python3 -c "import yaml; yaml.safe_load(...)"`.
 
+### 19. `app_server_count` de prod caía no default (1) em vez do valor pretendido (2) via CI
+- [x] **Status:** resolvido
+- **Tipo:** fix / regression
+- **Local:** `environments/{aws,azure}/prod/variables.tf`
+- **Problema:** Mesma causa raiz dos itens 17/18: o valor real pretendido para prod
+  (`app_server_count = 2`, para simular escala do web-server) só existia no
+  `terraform.tfvars` local (gitignored, removido do Git no item #1) — `variables.tf`
+  tinha `default = 1` em todos os ambientes (AWS e Azure), e o CI nunca passa essa
+  variável via `-var`/`TF_VAR_`. Resultado: rodando via pipeline, prod caía no mesmo
+  default `1` de teste/homol, em vez de escalar para 2 app servers.
+- **Impacto:** Confirmado na prática pelo usuário: prod criava a mesma quantidade de
+  recursos que teste/homol (38 na Azure, 40 na AWS) em vez dos recursos extras
+  esperados para a escala de produção.
+- **Commit:** `d68a032` (AWS prod), `6ec9866` (Azure prod)
+- **Notas:** Corrigido apenas o `default` de `app_server_count` para `2` em
+  `environments/aws/prod/variables.tf` e `environments/azure/prod/variables.tf`
+  (teste/homol permanecem em `1`, valor correto) — mesmo padrão de tratamento já usado
+  para `environment_name`/`vpc_cidr_block`/`instance_type` no item 17: valor não
+  sensível, seguro como default versionado, sem precisar de `-var` explícito no
+  workflow (diferente de `environment_name`/`lb_dns_name`, que são diretamente
+  deriváveis do input do workflow — `app_server_count` não é). `terraform validate`
+  passou em `aws/prod` e `azure/prod` após a mudança.
+  **Achado relacionado, fora de escopo:** `environments/aws/teste/main.tf` e
+  `environments/aws/homol/main.tf` não repassam `var.app_server_count` para o módulo
+  `app_environment` (já documentado no item #6) — não afeta esta correção porque o
+  default do módulo já é `1`, igual ao pretendido para teste/homol, mas fica registrado
+  como dívida técnica pendente de limpeza.
+
 ---
 
 ## 🟠 Alto
@@ -439,7 +467,7 @@
 
 | Severidade | Qtd | Resolvidos | Aceitos |
 |---|---|---|---|
-| Crítico | 3 | 3 | 0 |
+| Crítico | 4 | 4 | 0 |
 | Alto | 5 | 4 | 1 |
 | Médio | 7 | 6 | 1 |
 | Baixo | 3 | 2 | 1 |
