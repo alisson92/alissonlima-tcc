@@ -74,19 +74,23 @@ jobs:
           if [ "${{ github.event.inputs.action }}" == "apply" ]; then
             terraform apply -auto-approve \
               -var="create_environment=true" \
+              -var="environment_name=${{ github.event.inputs.environment }}" \
+              -var="lb_dns_name=${{ github.event.inputs.environment }}" \
               -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
               -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}"
 
           elif [ "${{ github.event.inputs.action }}" == "destroy" ]; then
             terraform apply -auto-approve \
               -var="create_environment=false" \
+              -var="environment_name=${{ github.event.inputs.environment }}" \
+              -var="lb_dns_name=${{ github.event.inputs.environment }}" \
               -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
               -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}"
-              
+
           else
             terraform force-unlock -force ${{ github.event.inputs.lock_id }}
           fi
-        
+
         working-directory: ./environments/azure/${{ github.event.inputs.environment }}
 
       - name: 'Get Outputs'
@@ -201,15 +205,17 @@ jobs:
           if [ "${{ github.event.inputs.action }}" == "apply" ]; then
             terraform apply -auto-approve \
               -var="create_environment=true" \
+              -var="environment_name=${{ github.event.inputs.environment }}" \
               -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
               -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}"
 
           elif [ "${{ github.event.inputs.action }}" == "destroy" ]; then
             terraform apply -auto-approve \
               -var="create_environment=false" \
+              -var="environment_name=${{ github.event.inputs.environment }}" \
               -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
               -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}"
-              
+
           else
             terraform force-unlock -force ${{ github.event.inputs.lock_id }}
           fi
