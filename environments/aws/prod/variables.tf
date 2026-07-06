@@ -40,7 +40,7 @@ variable "my_ip" {
 variable "app_server_count" {
   description = "Número de servidores de aplicação para escalabilidade."
   type        = number
-  default     = 1
+  default     = 2
 }
 
 # --- Boas Práticas Adicionais para o TCC ---
