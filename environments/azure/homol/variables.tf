@@ -17,7 +17,7 @@ variable "create_environment" {
 variable "environment_name" {
   description = "O nome do ambiente (ex: teste, homol, prod)."
   type        = string
-  default     = "teste" # Valor padrão para agilizar o deploy
+  default     = "homol" # Valor padrão para agilizar o deploy
 }
 
 variable "vnet_cidr_block" {
