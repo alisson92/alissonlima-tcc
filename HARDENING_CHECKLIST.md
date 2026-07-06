@@ -139,15 +139,34 @@
   antes de aplicar em `homol`/`prod`.
 
 ### 6. AMI AWS hardcoded sem mecanismo de atualização
-- [ ] **Status:** pendente
+- [x] **Status:** resolvido
 - **Tipo:** obsolescence
-- **Local:** `environments/aws/*/main.tf`, `environments/aws/*/variables.tf`
+- **Local:** `environments/aws/*/main.tf`, `environments/aws/*/variables.tf`,
+  `environments/aws/*/terraform.tfvars.example`
 - **Problema:** ID fixo (`ami-0a7d80731ae1b2435`) repetido em 5 lugares, sem
   `data "aws_ami"` com filtro.
 - **Impacto:** AMI pode ser desregistrada pela AWS a qualquer momento; sem patches
   automáticos do SO.
-- **Commit:** —
-- **Notas:** —
+- **Commit:** `1f969af`/`cade127`/`80140c6` (teste), `01187c9`/`f615aa2`/`1b48484`
+  (homol), `33f45d9`/`b257e01`/`584d02e` (prod)
+- **Notas:** Achado adicional durante a correção: os 3 `main.tf` já **ignoravam**
+  a variável `ami_id` — hardcodavam o literal direto, mesmo com a variável
+  declarada em `variables.tf` e valor em `terraform.tfvars`. Ou seja, além de
+  obsolescência havia uma variável morta.
+  Decisão do usuário: usar **sempre a AMI Ubuntu 22.04 LTS mais recente** via
+  `data "aws_ami"` (owner Canonical, `most_recent = true`), sem manter override
+  fixo opcional — mais simples, sempre atualizado. A variável `ami_id` foi
+  removida por completo (`variables.tf`, `terraform.tfvars` locais e
+  `.tfvars.example`, nos 3 ambientes).
+  **Trade-off aceito conscientemente:** como data sources são reavaliados a cada
+  `plan`/`apply`, se a Canonical publicar uma imagem 22.04 mais nova entre um
+  apply e outro, o Terraform vai propor recriar as instâncias mesmo sem nenhuma
+  mudança de código — o ambiente deixa de ser 100% pinado/reprodutível.
+  `terraform validate` passou nos 3 ambientes após a mudança.
+  **Novo achado, fora de escopo:** `environments/aws/teste/main.tf` e
+  `environments/aws/homol/main.tf` não repassam `app_server_count` para o módulo
+  `app_environment` (só `prod/main.tf` repassa) — provavelmente sempre usa o
+  default do módulo. Candidato a um novo item de revisão, não tratado aqui.
 
 ---
 
@@ -261,6 +280,6 @@
 | Severidade | Qtd | Resolvidos | Aceitos |
 |---|---|---|---|
 | Crítico | 1 | 1 | 0 |
-| Alto | 5 | 3 | 1 |
+| Alto | 5 | 4 | 1 |
 | Médio | 7 | 0 | 0 |
 | Baixo | 3 | 0 | 0 |
