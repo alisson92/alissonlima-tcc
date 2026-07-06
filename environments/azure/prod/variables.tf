@@ -52,7 +52,7 @@ variable "my_ip" {
 variable "app_server_count" {
   description = "Número de servidores de aplicação para este ambiente."
   type        = number
-  default     = 1
+  default     = 2
 }
 
 # --- AJUSTES PARA PADRONIZAÇÃO E INDEPENDÊNCIA AZURE ---
