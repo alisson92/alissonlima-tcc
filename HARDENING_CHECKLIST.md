@@ -306,13 +306,28 @@
 ## 🟢 Baixo
 
 ### 14. CDN externo (Tailwind, Google Fonts) na página de status
-- [ ] **Status:** pendente
+- [x] **Status:** resolvido
 - **Tipo:** best-practice
 - **Local:** `ansible/templates/index.html.j2`
 - **Problema:** Página carrega recursos externos em runtime.
 - **Impacto:** Mínimo; dependência de disponibilidade externa.
-- **Commit:** —
-- **Notas:** —
+- **Commit:** `14fce2e`
+- **Notas:** O Jinja só renderiza o HTML no servidor — as duas chamadas externas
+  (`cdn.tailwindcss.com`, `fonts.googleapis.com`) aconteciam no navegador de quem
+  acessa a página, a cada carregamento. Dois motivos concretos para corrigir, dado o
+  contexto do projeto (infra "liga/desliga", só sobe para teste/demo à banca): (1) o
+  Tailwind CDN é um compilador JIT em JavaScript que a própria documentação do
+  Tailwind recomenda usar só para prototipagem, nunca em nada que será de fato
+  mostrado; (2) a instituição de ensino do usuário já bloqueia CDNs externos por
+  firewall em outras ocasiões — rodar exatamente no momento da demonstração à banca
+  seria o pior momento possível para essa falha se manifestar. Substituídas as
+  classes utilitárias do Tailwind por CSS puro equivalente (mesmo `<style>` que já
+  existia no arquivo) e a fonte Google Fonts por uma system font stack
+  (`-apple-system, Segoe UI, Roboto, ...`, já presente em qualquer SO). Página
+  renderizada localmente via Jinja2 (fora de qualquer infra/Ansible real, com
+  variáveis fictícias para `azure` e `aws`) para conferir ausência de erros de
+  sintaxe e equivalência visual antes do commit — não há navegador disponível nesta
+  sessão para captura de tela, então a inspeção foi via leitura do HTML renderizado.
 
 ### 15. `docker-compose` v2.27.0 fixado via download manual do GitHub
 - [ ] **Status:** pendente
@@ -343,4 +358,4 @@
 | Crítico | 1 | 1 | 0 |
 | Alto | 5 | 4 | 1 |
 | Médio | 7 | 6 | 1 |
-| Baixo | 3 | 0 | 0 |
+| Baixo | 3 | 1 | 0 |
