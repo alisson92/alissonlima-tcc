@@ -25,4 +25,11 @@ resource "aws_instance" "bastion_host" {
       Name = "disk-bastion-tcc-${var.environment}"
     })
   }
+
+  # Força IMDSv2, mitigando SSRF contra o metadata service
+  metadata_options {
+    http_tokens                 = "required"
+    http_endpoint               = "enabled"
+    http_put_response_hop_limit = 1
+  }
 }
