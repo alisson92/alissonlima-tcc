@@ -279,7 +279,7 @@
   `plan`/`apply`), não há necessidade de validar contra infraestrutura real.
 
 ### 13. README desatualizado em relação à arquitetura atual
-- [ ] **Status:** pendente
+- [x] **Status:** resolvido
 - **Tipo:** refactor / docs
 - **Local:** `README.md`
 - **Problema:** Menciona Route 53 como DNS público (é Cloudflare) e SSL no ALB (é
@@ -287,8 +287,19 @@
   não lista `prod`.
 - **Impacto:** Documentação incorreta sobre onde o TLS é terminado — relevante para
   banca de TCC.
-- **Commit:** —
-- **Notas:** —
+- **Commit:** `e77daa2`
+- **Notas:** Corrigidas 5 divergências: (1) README só descrevia AWS, sem qualquer
+  menção a Azure, apesar do projeto ser explicitamente multi-cloud — reescrito para
+  cobrir ambos e explicar que são implementações paralelas do mesmo desenho de 6
+  módulos; (2) DNS público corrigido de "Route 53" para Cloudflare; (3) SSL/TLS
+  corrigido: termina na Cloudflare, não no ALB; (4) nome do workflow corrigido de
+  "Terraform TCC Pipeline" para `'Orquestrador Multicloud TCC (Azure & AWS)'`,
+  passo-a-passo de uso atualizado com o input "Provedor de Nuvem" e a opção
+  `force-unlock`; (5) árvore de diretórios atualizada para listar `prod` e toda a
+  árvore `environments/azure/*` e `modules/azure/*`, além dos módulos
+  `data_storage`, `app_environment`, `bastion`, `load_balancer` que faltavam em
+  `modules/aws/*`. Badge visual do Azure também adicionado (fora do escopo original,
+  aprovado à parte) para consistência com o texto atualizado.
 
 ---
 
@@ -331,5 +342,5 @@
 |---|---|---|---|
 | Crítico | 1 | 1 | 0 |
 | Alto | 5 | 4 | 1 |
-| Médio | 7 | 5 | 1 |
+| Médio | 7 | 6 | 1 |
 | Baixo | 3 | 0 | 0 |
