@@ -22,5 +22,4 @@ tags = {
 }
 
 # --- Variáveis Adicionais (Centralizadas no Ambiente) ---
-ami_id   = "ami-xxxxxxxxxxxxxxxxx"
 key_name = "your-aws-key-pair-name"
