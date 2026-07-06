@@ -55,6 +55,41 @@
      — são apenas identificadores de recurso, não credenciais, e continuam
      presentes no código atual (`environments/aws/*/main.tf`) de forma legítima.
 
+### 17. Pipeline de CI travava no `terraform apply` pedindo input interativo (regressão do item 1)
+- [x] **Status:** resolvido
+- **Tipo:** fix / regression
+- **Local:** `environments/{aws,azure}/{teste,homol,prod}/variables.tf`,
+  `.github/workflows/main.yml`
+- **Problema:** Efeito colateral não tratado da remediação do item #1. Antes daquela
+  correção, os 6 `terraform.tfvars` reais estavam commitados no Git, e o CI funcionava
+  porque o Terraform carregava esses valores automaticamente do checkout. Ao remover
+  esses arquivos do histórico (correção correta de segurança), ninguém repôs os valores
+  por outro canal no pipeline. Resultado: qualquer variável sem `default`
+  (`environment_name`, `vpc_cidr_block`/`vnet_cidr_block`, `instance_type`, `my_ip` no
+  AWS; `vnet_cidr_block`, `my_ip`, `public_key` no Azure) travava o `terraform apply` no
+  runner do GitHub Actions esperando input interativo que nunca chega (sem TTY),
+  prendendo o job indefinidamente e segurando o state lock.
+- **Impacto:** Pipeline de `apply`/`plan` completamente inoperante em qualquer ambiente
+  desde a correção do item #1; runs presos consomem minutos de runner e podem deixar o
+  state lock preso no DynamoDB, exigindo `force-unlock` manual.
+- **Commit:** `1abf049`/`fc06e8d`/`2d1a6fa` (defaults AWS teste/homol/prod),
+  `19dcd2b`/`180e873`/`d2cef11` (defaults Azure teste/homol/prod), `7864357`
+  (secrets no workflow)
+- **Notas:** Correção em duas frentes, conforme decisão do usuário: (1) valores não
+  sensíveis (`environment_name`, `vpc_cidr_block`/`vnet_cidr_block`, `instance_type`)
+  viraram `default` versionado direto no `variables.tf` de cada ambiente, usando os
+  mesmos valores já documentados nos `.tfvars.example`; (2) `my_ip` (o próprio IP
+  residencial que vazou no incidente do item #1) e `public_key` (chave SSH pública do
+  bastion Azure) passaram a ser supridos via GitHub Secrets (`MY_IP`,
+  `AZURE_BASTION_PUBLIC_KEY`), injetados como `TF_VAR_my_ip`/`TF_VAR_public_key` no
+  bloco `env:` do workflow — exige criação manual desses 2 secrets no repo antes do
+  próximo apply. `cloudflare_api_token`/`cloudflare_zone_id` já eram supridos
+  corretamente e não precisaram de mudança; `key_name` do AWS já tinha `default`.
+  `terraform validate` passou nos 6 ambientes após a mudança.
+  **Achado adicional, fora de escopo:** `environments/azure/{homol,prod}/variables.tf`
+  têm `default = "teste"` para `environment_name` (copiado do ambiente de teste e nunca
+  ajustado) — bug latente pré-existente, não corrigido aqui.
+
 ---
 
 ## 🟠 Alto
@@ -373,7 +408,7 @@
 
 | Severidade | Qtd | Resolvidos | Aceitos |
 |---|---|---|---|
-| Crítico | 1 | 1 | 0 |
+| Crítico | 2 | 2 | 0 |
 | Alto | 5 | 4 | 1 |
 | Médio | 7 | 6 | 1 |
 | Baixo | 3 | 2 | 1 |
