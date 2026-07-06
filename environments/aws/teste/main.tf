@@ -2,6 +2,22 @@
 # ENVIRONMENTS/TESTE/MAIN.TF - ORQUESTRAÇÃO FINAL (PADRÃO 2026)
 # =====================================================================
 
+# --- AMI: SEMPRE A ÚLTIMA IMAGEM UBUNTU 22.04 LTS (CANONICAL) PUBLICADA ---
+data "aws_ami" "ubuntu_jammy" {
+  most_recent = true
+  owners      = ["099720109477"] # Canonical
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
 # --- CAMADA 1: REDE ---
 module "networking" {
   count          = var.create_environment ? 1 : 0
@@ -43,7 +59,7 @@ module "app_environment" {
   instance_type      = var.instance_type
   sg_application_id  = module.security[0].sg_application_id
   db_volume_id       = module.data_storage[0].volume_id
-  ami_id             = "ami-0a7d80731ae1b2435" # Ubuntu 22.04 LTS
+  ami_id             = data.aws_ami.ubuntu_jammy.id
   key_name           = "tcc-alisson-key"
   tags               = var.tags
   
@@ -60,7 +76,7 @@ module "bastion_host" {
   public_subnet_id = module.networking[0].public_subnet_ids[0]
   sg_bastion_id    = module.security[0].sg_bastion_id
   environment      = var.environment_name
-  ami_id           = "ami-0a7d80731ae1b2435"
+  ami_id           = data.aws_ami.ubuntu_jammy.id
   key_name         = "tcc-alisson-key"
   tags             = var.tags
   # zone_id e domain_name removidos: DNS será via Cloudflare
