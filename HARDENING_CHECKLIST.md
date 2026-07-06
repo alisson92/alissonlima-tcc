@@ -349,14 +349,23 @@
   não quebra nada. `ansible-playbook --syntax-check` passou.
 
 ### 16. `disable_api_termination = false` em prod
-- [ ] **Status:** pendente
+- [x] **Status:** aceito (risco documentado, comportamento inalterado)
 - **Tipo:** best-practice
 - **Local:** `modules/aws/app_environment/main.tf`
 - **Problema:** Confirmar se é intencional também para prod (padrão do TCC é permitir
   destroy total via pipeline).
 - **Impacto:** Baixo risco de destruição acidental de prod sem camada extra de proteção.
-- **Commit:** —
-- **Notas:** —
+- **Commit:** — (nenhuma mudança de Terraform; apenas esta entrada do checklist)
+- **Notas:** Confirmado com o usuário: é intencional. O projeto é um TCC acadêmico
+  com design de infra "liga/desliga" (toggle `create_environment`, ver `CLAUDE.md`)
+  — nenhum ambiente, incluindo prod, roda 24/7, e o objetivo central do framework é
+  permitir destruir qualquer ambiente via pipeline sem exceção, para economizar
+  custo entre usos de teste/demonstração à banca. Adicionar `disable_api_termination
+  = true` só em prod exigiria uma etapa manual extra (desligar a proteção antes de
+  poder destruir), quebrando o fluxo 100% automatizado justamente no ambiente que
+  precisa ser destruído com a mesma frequência dos demais. Decisão consciente:
+  manter `false` em todos os ambientes, sem exceção — mesmo padrão de aceitação
+  consciente já usado nos itens 4 e 10.
 
 ---
 
@@ -367,4 +376,4 @@
 | Crítico | 1 | 1 | 0 |
 | Alto | 5 | 4 | 1 |
 | Médio | 7 | 6 | 1 |
-| Baixo | 3 | 2 | 0 |
+| Baixo | 3 | 2 | 1 |
