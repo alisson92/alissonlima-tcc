@@ -92,6 +92,35 @@
   `3aad4b2`/`5bd05d8`), a pedido do usuário após o teste real do pipeline ter travado
   justamente no ambiente Azure.
 
+### 18. `lb_dns_name` com o mesmo bug de copy-paste do item 17, causando colisão de registro DNS na Cloudflare
+- [x] **Status:** resolvido
+- **Tipo:** fix / regression
+- **Local:** `environments/azure/{homol,prod}/variables.tf`, `.github/workflows/main.yml`
+- **Problema:** Mesma classe de bug do item #17 (`environment_name`), mas na variável
+  irmã `lb_dns_name`: `environments/azure/{homol,prod}/variables.tf` tinham
+  `default = "teste"` (copiado do ambiente teste e nunca ajustado), e o CI não passava
+  `-var`/`TF_VAR_` para essa variável. Ao aplicar o ambiente `homol` pela primeira vez
+  após a correção do item 17, o Terraform caiu nesse default e criou o registro
+  Cloudflare `name = "${var.lb_dns_name}-azure"` como `teste-azure` em vez de
+  `homol-azure` (`environments/azure/homol/dns.tf:10`).
+- **Impacto:** Confirmado na prática pelo usuário: `homol-azure.alissonlima.dev.br`
+  retornava `DNS_PROBE_FINISHED_NXDOMAIN` (registro nunca criado com o nome certo),
+  enquanto `teste-azure.alissonlima.dev.br` continuou resolvendo mesmo após o ambiente
+  teste ter sido destruído — prova de que aquele registro pertencia, na verdade, ao
+  estado do homol. Corrigido o teste: destruir homol fez `teste-azure` parar de
+  resolver, confirmando a colisão de nome entre os dois estados Terraform na mesma
+  zona Cloudflare.
+- **Commit:** `3374dd4` (default homol), `a0bff1a` (default prod), `5dc5464`
+  (`-var` explícito no workflow)
+- **Notas:** Duas frentes de correção: (1) `lb_dns_name` default corrigido para
+  `"homol"`/`"prod"` em cada `variables.tf`; (2) causa raiz mais profunda endereçada no
+  workflow — o step "Terraform Action" (jobs `terraform_azure` e `terraform_aws`) agora
+  passa `-var="environment_name=${{ github.event.inputs.environment }}"` explicitamente
+  (e `-var="lb_dns_name=..."` só no job Azure), usando o próprio input do workflow como
+  fonte de verdade, em vez de depender de defaults locais que já erraram duas vezes
+  seguidas. `terraform validate` passou em homol/prod após o fix; YAML do workflow
+  validado com `python3 -c "import yaml; yaml.safe_load(...)"`.
+
 ---
 
 ## 🟠 Alto
@@ -410,7 +439,7 @@
 
 | Severidade | Qtd | Resolvidos | Aceitos |
 |---|---|---|---|
-| Crítico | 2 | 2 | 0 |
+| Crítico | 3 | 3 | 0 |
 | Alto | 5 | 4 | 1 |
 | Médio | 7 | 6 | 1 |
 | Baixo | 3 | 2 | 1 |
