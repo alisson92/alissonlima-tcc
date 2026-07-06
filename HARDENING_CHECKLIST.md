@@ -188,14 +188,21 @@
   --syntax-check` passou; confirmado que o playbook não desativa `gather_facts`.
 
 ### 8. Módulo `ansible.builtin.apt_key` deprecated
-- [ ] **Status:** pendente
+- [x] **Status:** resolvido
 - **Tipo:** obsolescence
 - **Local:** `ansible/playbook_docker.yml`
-- **Problema:** `apt_key` é deprecated; caminho recomendado é keyring em
+- **Problema:** `apt_key` era deprecated; caminho recomendado é keyring em
   `/etc/apt/keyrings/` + `signed-by`.
-- **Impacto:** Dívida técnica que tende a quebrar em versões futuras.
-- **Commit:** —
-- **Notas:** —
+- **Impacto:** Dívida técnica que tenderia a quebrar em versões futuras.
+- **Commit:** `7140e12`
+- **Notas:** Chave GPG do Docker agora baixada para `/etc/apt/keyrings/docker.asc`
+  (via `ansible.builtin.get_url`, sem precisar de `gpg --dearmor` — o `apt` do
+  Ubuntu 22.04 aceita `signed-by` apontando direto para um `.asc` armored, mesmo
+  padrão que a documentação oficial do Docker usa hoje) e referenciada via
+  `signed-by=` na linha do `apt_repository`. Nenhuma coleção externa foi
+  necessária, só módulos `ansible.builtin.*` já usados no resto do playbook.
+  `ansible-playbook --syntax-check` passou; `grep -rn "apt_key" ansible/` ficou
+  vazio.
 
 ### 9. Imagem `nginx:latest` (tag mutável)
 - [ ] **Status:** pendente
@@ -286,5 +293,5 @@
 |---|---|---|---|
 | Crítico | 1 | 1 | 0 |
 | Alto | 5 | 4 | 1 |
-| Médio | 7 | 1 | 0 |
+| Médio | 7 | 2 | 0 |
 | Baixo | 3 | 0 | 0 |
