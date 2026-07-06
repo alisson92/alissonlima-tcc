@@ -86,9 +86,11 @@
   próximo apply. `cloudflare_api_token`/`cloudflare_zone_id` já eram supridos
   corretamente e não precisaram de mudança; `key_name` do AWS já tinha `default`.
   `terraform validate` passou nos 6 ambientes após a mudança.
-  **Achado adicional, fora de escopo:** `environments/azure/{homol,prod}/variables.tf`
-  têm `default = "teste"` para `environment_name` (copiado do ambiente de teste e nunca
-  ajustado) — bug latente pré-existente, não corrigido aqui.
+  **Achado adicional, também corrigido:** `environments/azure/{homol,prod}/variables.tf`
+  tinham `default = "teste"` para `environment_name` (copiado do ambiente de teste e
+  nunca ajustado). Corrigido para `"homol"`/`"prod"` respectivamente (commits
+  `3aad4b2`/`5bd05d8`), a pedido do usuário após o teste real do pipeline ter travado
+  justamente no ambiente Azure.
 
 ---
 
