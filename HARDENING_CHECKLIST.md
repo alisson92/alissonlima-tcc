@@ -11,7 +11,9 @@
 ## Status
 
 - [ ] = pendente
-- [x] = resolvido (preencher commit + data)
+- [x] = resolvido ou aceito (ver campo **Status** de cada item para distinguir
+  "resolvido" de "aceito" — aceito significa que o código não mudou, é um risco
+  avaliado e assumido conscientemente)
 
 ---
 
@@ -95,14 +97,23 @@
   quiser tratar depois.
 
 ### 4. NSG da aplicação (Azure) libera porta 80 para `"*"` em subnet privada
-- [ ] **Status:** pendente
+- [x] **Status:** aceito (risco documentado, comportamento inalterado)
 - **Tipo:** security
 - **Local:** `modules/azure/security/main.tf` (regra `AllowHTTPInbound` do NSG `application`)
 - **Problema:** Usa `source_address_prefix = "*"` em vez de escopar para a subnet do LB
   ou `VirtualNetwork`.
 - **Impacto:** Amplia superfície de ataque desnecessariamente.
-- **Commit:** —
-- **Notas:** —
+- **Commit:** `da67292` (apenas documentação/comentário — nenhum valor de Terraform mudou)
+- **Notas:** Traffic path investigado e confirmado: cliente → Cloudflare (proxied,
+  TLS termina lá) → nova conexão HTTP da borda da Cloudflare para o IP público do
+  Azure LB → Standard LB preserva o IP de origem no caminho de entrada (sem SNAT) →
+  o NSG na subnet da VM enxerga o IP da Cloudflare, que é externo à VNet. Por isso
+  `"VirtualNetwork"` quebraria o acesso público real. A correção completa seria
+  restringir `source_address_prefixes` às faixas de IP publicadas pela Cloudflare
+  (cloudflare.com/ips) — **decisão do usuário: adiar essa mudança** para não
+  introduzir a dependência de manter essa lista atualizada, já que Cloudflare + WAF
+  já filtram boa parte do tráfego malicioso antes do origin. Documentado inline no
+  código para deixar claro que é uma decisão consciente, não um descuido.
 
 ### 5. Provider `azurerm` travado em `~> 3.0` (major desatualizada)
 - [ ] **Status:** pendente
@@ -233,9 +244,9 @@
 
 ## Resumo por severidade
 
-| Severidade | Qtd | Resolvidos |
-|---|---|---|
-| Crítico | 1 | 1 |
-| Alto | 5 | 2 |
-| Médio | 7 | 0 |
-| Baixo | 3 | 0 |
+| Severidade | Qtd | Resolvidos | Aceitos |
+|---|---|---|---|
+| Crítico | 1 | 1 | 0 |
+| Alto | 5 | 2 | 1 |
+| Médio | 7 | 0 | 0 |
+| Baixo | 3 | 0 | 0 |
