@@ -6,8 +6,8 @@
 
 resource "cloudflare_record" "app_aws" {
   # Garante que o registro só exista se o ambiente for criado
-  count   = var.create_environment ? 1 : 0 
-  
+  count = var.create_environment ? 1 : 0
+
   zone_id = var.cloudflare_zone_id
   name    = "homol-aws"
   content = module.load_balancer[0].alb_dns_name
@@ -16,7 +16,7 @@ resource "cloudflare_record" "app_aws" {
 }
 
 resource "cloudflare_record" "bastion_aws" {
-  count   = var.create_environment ? 1 : 0
+  count = var.create_environment ? 1 : 0
 
   zone_id = var.cloudflare_zone_id
   name    = "bastion-aws-homol"
@@ -29,15 +29,15 @@ resource "cloudflare_record" "bastion_aws" {
 
 resource "aws_route53_zone" "internal" {
   count = var.create_environment ? 1 : 0
-  
-  name  = "internal.alissonlima.dev.br"
+
+  name = "internal.alissonlima.dev.br"
   vpc {
     vpc_id = module.networking[0].vpc_id
   }
 }
 
 resource "aws_route53_record" "db_internal" {
-  count   = var.create_environment ? 1 : 0
+  count = var.create_environment ? 1 : 0
 
   zone_id = aws_route53_zone.internal[0].zone_id
   name    = "db-server"
@@ -47,7 +47,7 @@ resource "aws_route53_record" "db_internal" {
 }
 
 resource "aws_route53_record" "app_internal" {
-  count   = var.create_environment ? 1 : 0
+  count = var.create_environment ? 1 : 0
 
   zone_id = aws_route53_zone.internal[0].zone_id
   name    = "app-server"
