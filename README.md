@@ -108,7 +108,11 @@ Todo o ciclo de vida da infraestrutura (criação e destruição) é gerenciado 
 
 As instruções detalhadas para acessar os ambientes via SSH (através do Bastion Host) estão documentadas no arquivo:
 
-➡️ **[Guia de Acesso Administrativo](./ACESSOS.md)**
+➡️ **[Guia de Acesso Administrativo](./docs/ACESSOS.md)**
+
+## 📄 Documentação Adicional
+
+* **[Anteprojeto](./docs/ANTEPROJETO%20-%20ALISSON%20CORREA%20LIMA.doc)** — documento que descreve o propósito e a motivação acadêmica deste projeto (TCC).
 
 ## 👨‍💻 Autor
 
