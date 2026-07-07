@@ -1,0 +1,67 @@
+name: 'Validação de PR (Terraform)'
+
+# Roda em todo PR contra main/develop. Não usa nenhum secret/credencial de
+# nuvem (init com -backend=false), pois PRs em repositório público podem
+# vir de forks.
+on:
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  fmt:
+    name: terraform-fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.12"
+          terraform_wrapper: false
+
+      - name: terraform fmt -check
+        run: terraform fmt -check -recursive -diff
+
+  validate:
+    name: terraform-validate
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        path:
+          - environments/aws/teste
+          - environments/aws/homol
+          - environments/aws/prod
+          - environments/azure/teste
+          - environments/azure/homol
+          - environments/azure/prod
+          - modules/aws/networking
+          - modules/aws/security
+          - modules/aws/data_storage
+          - modules/aws/app_environment
+          - modules/aws/bastion
+          - modules/aws/load_balancer
+          - modules/azure/networking
+          - modules/azure/security
+          - modules/azure/data_storage
+          - modules/azure/app_environment
+          - modules/azure/bastion
+          - modules/azure/load_balancer
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.12"
+          terraform_wrapper: false
+
+      - name: terraform init (sem backend real)
+        working-directory: ${{ matrix.path }}
+        run: terraform init -backend=false
+
+      - name: terraform validate
+        working-directory: ${{ matrix.path }}
+        run: terraform validate
