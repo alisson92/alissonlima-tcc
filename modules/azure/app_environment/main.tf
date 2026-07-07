@@ -18,16 +18,16 @@ resource "azurerm_network_interface" "app_nic" {
 
 # --- 2. Servidores de Aplicação (VMs) ---
 resource "azurerm_linux_virtual_machine" "app_server" {
-  count               = var.app_server_count
-  name                = "vm-app-${count.index}-${var.environment}"
+  count = var.app_server_count
+  name  = "vm-app-${count.index}-${var.environment}"
   # PADRONIZAÇÃO: Nome que aparecerá no DNS interno
-  computer_name       = "app-server-${count.index}" 
+  computer_name       = "app-server-${count.index}"
   resource_group_name = var.resource_group_name
   location            = var.location
   size                = var.vm_size
-  
+
   # PADRONIZAÇÃO: Usuário igual ao da AWS
-  admin_username      = "ubuntu" 
+  admin_username = "ubuntu"
 
   network_interface_ids = [
     azurerm_network_interface.app_nic[count.index].id,
@@ -68,14 +68,14 @@ resource "azurerm_network_interface" "db_nic" {
 
 # --- 4. Servidor de Banco de Dados ---
 resource "azurerm_linux_virtual_machine" "db_server" {
-  name                = "vm-db-${var.environment}"
+  name = "vm-db-${var.environment}"
   # PADRONIZAÇÃO: Nome que aparecerá no DNS interno
   computer_name       = "db-server"
   resource_group_name = var.resource_group_name
   location            = var.location
   size                = var.vm_size
   admin_username      = "ubuntu" # PADRONIZAÇÃO
-  
+
   network_interface_ids = [
     azurerm_network_interface.db_nic.id,
   ]
