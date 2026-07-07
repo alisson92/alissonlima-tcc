@@ -72,8 +72,8 @@ AWS and Azure implementations are **not** abstracted behind a common module — 
 
 ### State backend
 
-- AWS: S3 bucket `alissonlima-tcc-terraform-state` + DynamoDB table `alissonlima-tcc-terraform-state-lock` for locking, one state key per environment (`aws/<env>/terraform.tfstate`). Bootstrapped by `backend/aws/main.tf`.
-- Azure environments currently have no `backend.tf` (state config differs from AWS — check `environments/azure/<env>/` directly before assuming parity here).
+- AWS: S3 bucket `alissonlima-tcc-terraform-state` + DynamoDB table `alissonlima-tcc-terraform-state-lock` for locking, one state key per environment (`aws/<env>/terraform.tfstate`). Bootstrapped by `backend/aws/main.tf`, declared in each environment's `backend.tf`.
+- Azure: Storage Account `alissonlimatcctfstate` (container `tfstate`) for state, one blob key per environment (`environments/azure/<env>/terraform.tfstate`). Bootstrapped by `backend/azure/main.tf`, declared in each environment's `backend.tf` — same file-per-concern layout as AWS.
 
 ### CI/CD pipeline shape
 
