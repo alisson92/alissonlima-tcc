@@ -25,7 +25,7 @@ resource "cloudflare_record" "bastion_azure" {
 # --- 2. DNS PRIVADO (AZURE PRIVATE DNS - RESOLUÇÃO INTERNA) ---
 
 resource "azurerm_private_dns_a_record" "app_internal" {
-  count               = var.create_environment ? var.app_server_count : 0
+  count = var.create_environment ? var.app_server_count : 0
   # Lógica refinada: se houver só 1, nome simples. Se houver mais, nome indexado.
   name                = var.app_server_count > 1 ? "app-server-${count.index}" : "app-server"
   zone_name           = module.networking[0].private_dns_zone_name
