@@ -41,7 +41,7 @@ variable "lb_dns_name" {
 variable "tags" {
   description = "Um mapa de tags para ser aplicado nos recursos."
   type        = map(string)
-  default     = {} 
+  default     = {}
 }
 
 variable "my_ip" {
