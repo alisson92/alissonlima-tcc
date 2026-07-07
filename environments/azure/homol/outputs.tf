@@ -4,7 +4,7 @@ output "bastion_public_ip" {
   description = "IP público do Bastion Host"
   # O [*] extrai o atributo de todos os itens da lista (mesmo que seja zero)
   # O one() retorna o valor se a lista tiver 1 item, ou null se estiver vazia
-  value       = one(module.bastion_host[*].bastion_public_ip)
+  value = one(module.bastion_host[*].bastion_public_ip)
 }
 
 output "lb_public_ip" {
