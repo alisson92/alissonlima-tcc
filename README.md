@@ -64,6 +64,10 @@ O projeto é organizado de forma modular para máxima reutilização e clareza:
 ```bash
 ├── .github/workflows/    # Contém o pipeline de CI/CD (GitHub Actions)
 ├── ansible/              # Contém os playbooks de configuração do Ansible
+├── backend/              # Bootstrap único do state remoto (S3+DynamoDB / Storage Account)
+│   ├── aws/
+│   └── azure/
+├── docs/                 # Documentação de apoio (acessos administrativos, anteprojeto)
 ├── environments/         # Onde a infraestrutura é efetivamente executada
 │   ├── aws/
 │   │   ├── teste/        # Ambiente de Teste (AWS)
@@ -74,6 +78,8 @@ O projeto é organizado de forma modular para máxima reutilização e clareza:
 │       ├── homol/        # Ambiente de Homologação (Azure)
 │       └── prod/         # Ambiente de Produção (Azure)
 ├── modules/              # Blocos de construção reutilizáveis da infraestrutura
+│   │                     # (cada módulo traz main/variables/outputs/versions.tf +
+│   │                     #  README.md gerado via terraform-docs)
 │   ├── aws/
 │   │   ├── networking/       # VPC, sub-redes públicas/privadas
 │   │   ├── security/         # Security Groups
