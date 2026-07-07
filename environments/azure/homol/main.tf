@@ -47,15 +47,15 @@ module "data_storage" {
 
 # --- CAMADA 4: COMPUTAÇÃO (Servidores) ---
 module "app_environment" {
-  count                 = var.create_environment ? 1 : 0
-  source                = "../../../modules/azure/app_environment"
-  resource_group_name   = azurerm_resource_group.main[0].name
-  location              = azurerm_resource_group.main[0].location
-  environment           = var.environment_name
-  private_subnet_ids    = module.networking[0].private_subnet_ids
-  vm_size               = var.instance_type
+  count               = var.create_environment ? 1 : 0
+  source              = "../../../modules/azure/app_environment"
+  resource_group_name = azurerm_resource_group.main[0].name
+  location            = azurerm_resource_group.main[0].location
+  environment         = var.environment_name
+  private_subnet_ids  = module.networking[0].private_subnet_ids
+  vm_size             = var.instance_type
   # PADRONIZAÇÃO: Mudando para ubuntu para espelhar a AWS
-  admin_username        = "ubuntu" 
+  admin_username        = "ubuntu"
   public_key            = var.public_key
   db_disk_id            = module.data_storage[0].db_disk_id
   private_dns_zone_name = module.networking[0].private_dns_zone_name
@@ -71,11 +71,11 @@ module "bastion_host" {
   location            = azurerm_resource_group.main[0].location
   public_subnet_id    = module.networking[0].public_subnet_ids[0]
   # PADRONIZAÇÃO: Usuário ubuntu para paridade com AWS
-  admin_username      = "ubuntu" 
-  public_key          = var.public_key
+  admin_username = "ubuntu"
+  public_key     = var.public_key
   # A LINHA 'domain_name' FOI REMOVIDA DAQUI
-  environment         = var.environment_name
-  tags                = var.tags
+  environment = var.environment_name
+  tags        = var.tags
 }
 
 # --- CAMADA 6: PONTO DE ENTRADA DA APLICAÇÃO (Load Balancer) ---

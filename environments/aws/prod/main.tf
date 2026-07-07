@@ -41,13 +41,13 @@ module "security" {
 
 # --- CAMADA 3: ARMAZENAMENTO PERSISTENTE ---
 module "data_storage" {
-  count        = var.create_environment ? 1 : 0
-  source       = "../../../modules/aws/data_storage"
-  environment  = var.environment_name
+  count       = var.create_environment ? 1 : 0
+  source      = "../../../modules/aws/data_storage"
+  environment = var.environment_name
   # az: Busca dinamicamente do output da rede (us-east-1a)
-  az           = var.create_environment ? module.networking[0].private_subnet_availability_zones[0] : "us-east-1a"
-  volume_size  = 10
-  tags         = var.tags
+  az          = var.create_environment ? module.networking[0].private_subnet_availability_zones[0] : "us-east-1a"
+  volume_size = 10
+  tags        = var.tags
 }
 
 # --- CAMADA 4: COMPUTAÇÃO (Servidores) ---
@@ -62,11 +62,11 @@ module "app_environment" {
   ami_id             = data.aws_ami.ubuntu_jammy.id
   key_name           = "tcc-alisson-key"
   tags               = var.tags
-  app_server_count    = var.app_server_count
-  
+  app_server_count   = var.app_server_count
+
   # AZ sincronizada com o volume para permitir o attachment
   db_server_availability_zone = var.create_environment ? module.networking[0].private_subnet_availability_zones[0] : "us-east-1a"
-  
+
   # DNS Privado removido: Módulo agora é "puro"
 }
 
