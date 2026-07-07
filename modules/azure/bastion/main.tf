@@ -27,15 +27,15 @@ resource "azurerm_network_interface" "bastion_nic" {
 
 # 3. Máquina Virtual Linux (Ubuntu Server)
 resource "azurerm_linux_virtual_machine" "bastion" {
-  name                = "vm-bastion-${var.environment}"
+  name = "vm-bastion-${var.environment}"
   # PADRONIZAÇÃO: Nome que aparecerá no DNS interno/hostname
-  computer_name       = "bastion" 
+  computer_name       = "bastion"
   resource_group_name = var.resource_group_name
   location            = var.location
   size                = "Standard_B1s"
-  
+
   # PADRONIZAÇÃO: Usuário 'ubuntu' para paridade total com AWS
-  admin_username      = var.admin_username
+  admin_username = var.admin_username
 
   network_interface_ids = [
     azurerm_network_interface.bastion_nic.id,
