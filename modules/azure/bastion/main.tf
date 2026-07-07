@@ -2,17 +2,7 @@
 #        MÓDULO BASTION HOST - AZURE (100% INDEPENDENTE)
 # =================================================================
 
-# 1. Configuração de Provedores do Módulo
-# REMOVIDO: Provedor AWS para garantir independência total.
-terraform {
-  required_providers {
-    azurerm = {
-      source = "hashicorp/azurerm"
-    }
-  }
-}
-
-# 2. IP Público para o Bastion Host
+# 1. IP Público para o Bastion Host
 resource "azurerm_public_ip" "bastion_pip" {
   name                = "pip-bastion-${var.environment}"
   location            = var.location
@@ -21,7 +11,7 @@ resource "azurerm_public_ip" "bastion_pip" {
   sku                 = "Standard"
 }
 
-# 3. Interface de Rede (NIC)
+# 2. Interface de Rede (NIC)
 resource "azurerm_network_interface" "bastion_nic" {
   name                = "nic-bastion-${var.environment}"
   location            = var.location
@@ -35,7 +25,7 @@ resource "azurerm_network_interface" "bastion_nic" {
   }
 }
 
-# 4. Máquina Virtual Linux (Ubuntu Server)
+# 3. Máquina Virtual Linux (Ubuntu Server)
 resource "azurerm_linux_virtual_machine" "bastion" {
   name                = "vm-bastion-${var.environment}"
   # PADRONIZAÇÃO: Nome que aparecerá no DNS interno/hostname

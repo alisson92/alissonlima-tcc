@@ -72,8 +72,8 @@ AWS and Azure implementations are **not** abstracted behind a common module — 
 
 ### State backend
 
-- AWS: S3 bucket `alissonlima-tcc-terraform-state` + DynamoDB table `alissonlima-tcc-terraform-state-lock` for locking, one state key per environment (`aws/<env>/terraform.tfstate`). Bootstrapped by `backend/aws/main.tf`.
-- Azure environments currently have no `backend.tf` (state config differs from AWS — check `environments/azure/<env>/` directly before assuming parity here).
+- AWS: S3 bucket `alissonlima-tcc-terraform-state` + DynamoDB table `alissonlima-tcc-terraform-state-lock` for locking, one state key per environment (`aws/<env>/terraform.tfstate`). Bootstrapped by `backend/aws/main.tf`, declared in each environment's `backend.tf`.
+- Azure: Storage Account `alissonlimatcctfstate` (container `tfstate`) for state, one blob key per environment (`environments/azure/<env>/terraform.tfstate`). Bootstrapped by `backend/azure/main.tf`, declared in each environment's `backend.tf` — same file-per-concern layout as AWS.
 
 ### CI/CD pipeline shape
 
@@ -81,4 +81,4 @@ AWS and Azure implementations are **not** abstracted behind a common module — 
 
 ### Access model
 
-Documented in `ACESSOS.md`: all internal access (app/db servers) is via SSH Agent Forwarding (`-A`) through the environment-and-provider-specific bastion (e.g. `bastion-aws-prod.alissonlima.dev.br`), then plain `ssh` to internal hostnames (`app-server-N.internal.alissonlima.dev.br`, `db-server.internal.alissonlima.dev.br`) resolved by the private Route53/DNS zone.
+Documented in `docs/ACESSOS.md`: all internal access (app/db servers) is via SSH Agent Forwarding (`-A`) through the environment-and-provider-specific bastion (e.g. `bastion-aws-prod.alissonlima.dev.br`), then plain `ssh` to internal hostnames (`app-server-N.internal.alissonlima.dev.br`, `db-server.internal.alissonlima.dev.br`) resolved by the private Route53/DNS zone.
