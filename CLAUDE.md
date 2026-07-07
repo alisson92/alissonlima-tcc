@@ -81,4 +81,4 @@ AWS and Azure implementations are **not** abstracted behind a common module — 
 
 ### Access model
 
-Documented in `ACESSOS.md`: all internal access (app/db servers) is via SSH Agent Forwarding (`-A`) through the environment-and-provider-specific bastion (e.g. `bastion-aws-prod.alissonlima.dev.br`), then plain `ssh` to internal hostnames (`app-server-N.internal.alissonlima.dev.br`, `db-server.internal.alissonlima.dev.br`) resolved by the private Route53/DNS zone.
+Documented in `docs/ACESSOS.md`: all internal access (app/db servers) is via SSH Agent Forwarding (`-A`) through the environment-and-provider-specific bastion (e.g. `bastion-aws-prod.alissonlima.dev.br`), then plain `ssh` to internal hostnames (`app-server-N.internal.alissonlima.dev.br`, `db-server.internal.alissonlima.dev.br`) resolved by the private Route53/DNS zone.
