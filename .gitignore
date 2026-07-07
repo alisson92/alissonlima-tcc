@@ -12,3 +12,27 @@
 # Arquivos de plano podem conter dados sensíveis
 *.tfplan
 *.out
+
+# Logs de crash do Terraform
+crash.log
+crash.*.log
+
+# Arquivos de override são usados para sobrescrever recursos localmente
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Configuração de CLI local (pode conter credenciais/tokens)
+.terraformrc
+terraform.rc
+
+# Configurações de IDE/editor (locais por máquina, não devem ser compartilhadas)
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Arquivos de SO
+.DS_Store
+Thumbs.db
