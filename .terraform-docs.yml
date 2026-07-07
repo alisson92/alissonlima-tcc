@@ -1,0 +1,17 @@
+formatter: "markdown table"
+
+output:
+  file: "README.md"
+  mode: inject
+
+sections:
+  hide: []
+  show: []
+
+sort:
+  enabled: true
+  by: name
+
+settings:
+  indent: 2
+  anchor: true
