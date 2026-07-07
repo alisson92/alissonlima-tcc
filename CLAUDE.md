@@ -26,6 +26,18 @@ To bootstrap AWS remote state (S3 bucket + DynamoDB lock table), see `backend/aw
 
 Ansible playbooks (`ansible/playbook_docker.yml`, `ansible/playbook_nginx_container.yml`) are only ever invoked by the pipeline against a dynamically generated `inventory.ini`, proxied through the Bastion host. They are not meant to be run ad hoc against arbitrary hosts.
 
+## Git workflow (GitFlow)
+
+This project follows a GitFlow-style branching model with `main` and `develop` as the permanent branches:
+
+1. Always branch off **`main`** for new work (feature/fix/chore branch), never off `develop`.
+2. Make the changes, validate/test locally as applicable.
+3. Open a PR from that branch into **`develop`**.
+4. After merging to `develop`, validate/test again from `develop`.
+5. Only then open a PR from `develop` into **`main`**.
+
+Never push directly to `main` or `develop` — always go through a PR, and always test at each stage (branch → develop, and develop → main) before promoting.
+
 ## Commit workflow
 
 - **One file per commit, always.** Stage and commit changed files individually (`git add <single-file>` → `git commit`); never `git add .` / `git add -A`, and never bundle multiple changed files into one commit message — even when a fix logically spans more than one file (e.g. a module's `main.tf` and its matching `variables.tf`). Do N separate add+commit cycles for N changed files.
