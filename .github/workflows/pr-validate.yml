@@ -150,19 +150,30 @@ jobs:
           - modules/azure/app_environment
           - modules/azure/bastion
           - modules/azure/load_balancer
+    env:
+      TERRAFORM_DOCS_VERSION: "0.24.0"
     steps:
       - uses: actions/checkout@v4
 
-      # fail-on-diff falha o job se o README gerado divergir do commitado,
-      # sem precisar de um git diff manual. git-push fica false (padrão):
-      # este job só verifica, nunca commita de volta.
+      # Instala o binário diretamente (em vez de terraform-docs/gh-actions,
+      # cuja imagem Docker trava numa versão antiga do terraform-docs -
+      # 0.20.0 - que formata as tabelas markdown de forma diferente da
+      # versão usada para gerar os READMEs commitados, gerando diffs
+      # falso-positivos). Fixar a versão aqui mantém CI e geração local
+      # sempre iguais.
+      - name: instalar terraform-docs
+        run: |
+          curl -sL -o terraform-docs.tar.gz \
+            "https://github.com/terraform-docs/terraform-docs/releases/download/v${TERRAFORM_DOCS_VERSION}/terraform-docs-v${TERRAFORM_DOCS_VERSION}-linux-amd64.tar.gz"
+          tar -xzf terraform-docs.tar.gz terraform-docs
+          chmod +x terraform-docs
+          sudo mv terraform-docs /usr/local/bin/terraform-docs
+
       - name: terraform-docs (verifica se README está sincronizado)
-        uses: terraform-docs/gh-actions@v1.4.1
-        with:
-          working-dir: ${{ matrix.path }}
-          config-file: ${{ github.workspace }}/.terraform-docs.yml
-          git-push: false
-          fail-on-diff: true
+        run: |
+          terraform-docs -c "${{ github.workspace }}/.terraform-docs.yml" markdown table \
+            --output-file README.md --output-mode inject "${{ matrix.path }}"
+          git diff --exit-code -- "${{ matrix.path }}/README.md"
 
   terraform-test:
     name: terraform-test
