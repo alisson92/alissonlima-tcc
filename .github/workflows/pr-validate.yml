@@ -65,3 +65,150 @@ jobs:
       - name: terraform validate
         working-directory: ${{ matrix.path }}
         run: terraform validate
+
+  tflint:
+    name: tflint
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        path:
+          - modules/aws/networking
+          - modules/aws/security
+          - modules/aws/data_storage
+          - modules/aws/app_environment
+          - modules/aws/bastion
+          - modules/aws/load_balancer
+          - modules/azure/networking
+          - modules/azure/security
+          - modules/azure/data_storage
+          - modules/azure/app_environment
+          - modules/azure/bastion
+          - modules/azure/load_balancer
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.63.1
+
+      - name: tflint --init (instala plugins aws/azurerm do .tflint.hcl)
+        run: tflint --init
+
+      # Não-bloqueante por enquanto: findings pré-existentes nos 12 módulos
+      # ainda não foram triados/suprimidos. Remover continue-on-error depois
+      # da triagem, quando este job virar required status check.
+      - name: tflint
+        continue-on-error: true
+        run: tflint --chdir="${{ matrix.path }}" --config="${{ github.workspace }}/.tflint.hcl"
+
+  trivy:
+    name: trivy-misconfig-scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # Não-bloqueante por enquanto (exit-code 0): achados pré-existentes
+      # (ex.: NSG do app tier com source "*", listener HTTP sem HTTPS no ALB)
+      # ainda não foram triados/suprimidos em trivy.yaml. Trocar para
+      # exit-code 1 depois da triagem, quando este job virar required
+      # status check.
+      - name: trivy config scan
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: 'config'
+          config: 'trivy.yaml'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          exit-code: '0'
+
+      - name: upload SARIF to GitHub Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  terraform-docs-check:
+    name: terraform-docs-check
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        path:
+          - modules/aws/networking
+          - modules/aws/security
+          - modules/aws/data_storage
+          - modules/aws/app_environment
+          - modules/aws/bastion
+          - modules/aws/load_balancer
+          - modules/azure/networking
+          - modules/azure/security
+          - modules/azure/data_storage
+          - modules/azure/app_environment
+          - modules/azure/bastion
+          - modules/azure/load_balancer
+    env:
+      TERRAFORM_DOCS_VERSION: "0.24.0"
+    steps:
+      - uses: actions/checkout@v4
+
+      # Instala o binário diretamente (em vez de terraform-docs/gh-actions,
+      # cuja imagem Docker trava numa versão antiga do terraform-docs -
+      # 0.20.0 - que formata as tabelas markdown de forma diferente da
+      # versão usada para gerar os READMEs commitados, gerando diffs
+      # falso-positivos). Fixar a versão aqui mantém CI e geração local
+      # sempre iguais.
+      - name: instalar terraform-docs
+        run: |
+          curl -sL -o terraform-docs.tar.gz \
+            "https://github.com/terraform-docs/terraform-docs/releases/download/v${TERRAFORM_DOCS_VERSION}/terraform-docs-v${TERRAFORM_DOCS_VERSION}-linux-amd64.tar.gz"
+          tar -xzf terraform-docs.tar.gz terraform-docs
+          chmod +x terraform-docs
+          sudo mv terraform-docs /usr/local/bin/terraform-docs
+
+      - name: terraform-docs (verifica se README está sincronizado)
+        run: |
+          terraform-docs -c "${{ github.workspace }}/.terraform-docs.yml" markdown table \
+            --output-file README.md --output-mode inject "${{ matrix.path }}"
+          git diff --exit-code -- "${{ matrix.path }}/README.md"
+
+  terraform-test:
+    name: terraform-test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        path:
+          - modules/aws/networking
+          - modules/aws/security
+          - modules/aws/data_storage
+          - modules/aws/app_environment
+          - modules/aws/bastion
+          - modules/aws/load_balancer
+          - modules/azure/networking
+          - modules/azure/security
+          - modules/azure/data_storage
+          - modules/azure/app_environment
+          - modules/azure/bastion
+          - modules/azure/load_balancer
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.12"
+          terraform_wrapper: false
+
+      - name: terraform init (sem backend real)
+        working-directory: ${{ matrix.path }}
+        run: terraform init -backend=false
+
+      # Usa mock_provider em tests/main.tftest.hcl (sem credenciais reais,
+      # sem chamadas de API). Bloqueante desde o início: são testes novos,
+      # escritos para passar contra o código atual, sem ruído legado.
+      - name: terraform test
+        working-directory: ${{ matrix.path }}
+        run: terraform test
