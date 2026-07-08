@@ -130,3 +130,36 @@ jobs:
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: 'trivy-results.sarif'
+
+  terraform-docs-check:
+    name: terraform-docs-check
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        path:
+          - modules/aws/networking
+          - modules/aws/security
+          - modules/aws/data_storage
+          - modules/aws/app_environment
+          - modules/aws/bastion
+          - modules/aws/load_balancer
+          - modules/azure/networking
+          - modules/azure/security
+          - modules/azure/data_storage
+          - modules/azure/app_environment
+          - modules/azure/bastion
+          - modules/azure/load_balancer
+    steps:
+      - uses: actions/checkout@v4
+
+      # fail-on-diff falha o job se o README gerado divergir do commitado,
+      # sem precisar de um git diff manual. git-push fica false (padrão):
+      # este job só verifica, nunca commita de volta.
+      - name: terraform-docs (verifica se README está sincronizado)
+        uses: terraform-docs/gh-actions@v1.4.1
+        with:
+          working-dir: ${{ matrix.path }}
+          config-file: ${{ github.workspace }}/.terraform-docs.yml
+          git-push: false
+          fail-on-diff: true
