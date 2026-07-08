@@ -101,3 +101,32 @@ jobs:
       - name: tflint
         continue-on-error: true
         run: tflint --chdir="${{ matrix.path }}" --config="${{ github.workspace }}/.tflint.hcl"
+
+  trivy:
+    name: trivy-misconfig-scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # Não-bloqueante por enquanto (exit-code 0): achados pré-existentes
+      # (ex.: NSG do app tier com source "*", listener HTTP sem HTTPS no ALB)
+      # ainda não foram triados/suprimidos em trivy.yaml. Trocar para
+      # exit-code 1 depois da triagem, quando este job virar required
+      # status check.
+      - name: trivy config scan
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: 'config'
+          config: 'trivy.yaml'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          exit-code: '0'
+
+      - name: upload SARIF to GitHub Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: 'trivy-results.sarif'
