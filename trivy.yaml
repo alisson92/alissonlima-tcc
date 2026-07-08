@@ -1,0 +1,13 @@
+# Config baseline do Trivy (scan-type "config", cobre módulos e ambientes
+# Terraform via .github/workflows/pr-validate.yml). Achados legítimos porém
+# aceitos (ex.: egress 0.0.0.0/0 intencional no bastion/ALB) devem ser
+# suprimidos aqui com justificativa durante a triagem pós-merge, não
+# silenciados sem registro.
+scan:
+  scanners:
+    - misconfig
+
+misconfiguration:
+  # IDs específicos a ignorar, um por linha, com o motivo documentado ao lado.
+  # Ex.: "AVD-AWS-0104 # egress 0.0.0.0/0 intencional no SG do bastion"
+  skip-check: []
