@@ -1,3 +1,13 @@
+## Motivação
+
+Provisiona o(s) servidor(es) de aplicação (`app_server_count`) e o servidor de
+banco de dados como VMs Linux, cada uma com sua própria NIC dedicada (a Azure,
+diferente da AWS, exige a interface de rede como recurso explícito e separado
+da VM). Ambos ficam restritos à sub-rede privada. Assim como no módulo
+equivalente da AWS, este módulo não cria registros de DNS — isso é feito no
+`dns.tf` do ambiente, mantendo o módulo reutilizável e testável de forma
+isolada.
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
