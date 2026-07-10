@@ -1,3 +1,10 @@
+## Motivação
+
+O Managed Disk (equivalente ao EBS na AWS) é declarado num módulo próprio,
+separado de `app_environment`, para que seu ciclo de vida (criação/resize/
+retenção de dados) seja independente do ciclo de vida da VM do banco —
+permitindo recriar o servidor de banco sem perder o disco de dados.
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
