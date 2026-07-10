@@ -1,3 +1,13 @@
+## Motivação
+
+Provisiona o(s) servidor(es) de aplicação (`app_server_count`, usado para HA em
+`prod`) e o servidor de banco de dados, ambos restritos à sub-rede privada.
+O módulo é deliberadamente "infraestrutura pura, sem dependência de DNS" (ver
+comentário no `main.tf`): os registros de DNS interno/externo são criados no
+`dns.tf` do ambiente, não aqui, para evitar que este módulo precise conhecer a
+zona Route53/Cloudflare — mantendo-o reutilizável e testável (`terraform test`
+mockado) de forma isolada.
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
