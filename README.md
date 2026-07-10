@@ -18,7 +18,45 @@ A solução é um framework de automação que utiliza as melhores práticas de 
 
 ## 🏛️ Arquitetura da Solução (Multi-Cloud: AWS & Azure)
 
-**Nota:** É altamente recomendável inserir aqui um diagrama visual da arquitetura.
+### Visão geral do pipeline
+
+```mermaid
+flowchart TD
+    A["GitHub Actions: workflow_dispatch<br/>(provider, environment, action)"] -->|provider=azure| B[terraform_azure]
+    A -->|provider=aws| C[terraform_aws]
+    B --> D[configure_azure_servers]
+    C --> E[configure_aws_servers]
+    D --> F[Ambiente Azure provisionado e configurado]
+    E --> G[Ambiente AWS provisionado e configurado]
+```
+
+### Topologia de rede por ambiente
+
+O mesmo desenho de 6 módulos é aplicado em cada ambiente (teste/homol/prod), em ambos os provedores:
+
+```mermaid
+flowchart TB
+    U(["Usuário / Cloudflare"])
+    subgraph VPC["VPC / VNet"]
+        subgraph PUB["Sub-rede pública"]
+            BH["Bastion Host"]
+            LB["Load Balancer"]
+        end
+        subgraph PRIV["Sub-rede privada"]
+            APP1["App Server 1"]
+            APP2["App Server N"]
+            DB[("DB Server")]
+        end
+    end
+    U -->|"SSH admin"| BH
+    U -->|"HTTP"| LB
+    LB --> APP1
+    LB --> APP2
+    BH -. "SSH interno" .-> APP1
+    BH -. "SSH interno" .-> DB
+    APP1 --> DB
+    APP2 --> DB
+```
 
 A infraestrutura é provisionada de forma equivalente em **AWS** e **Azure**, cada uma
 seguindo o mesmo design de 6 módulos (networking, security, data_storage,
@@ -123,6 +161,7 @@ As instruções detalhadas para acessar os ambientes via SSH (através do Bastio
 
 * **[Anteprojeto](./docs/ANTEPROJETO%20-%20ALISSON%20CORREA%20LIMA.doc)** — documento que descreve o propósito e a motivação acadêmica deste projeto (TCC).
 * **[Gates de Qualidade no CI](./docs/CI-QUALIDADE.md)** — por que e como o pipeline de PR passou a rodar tflint, Trivy, verificação de sincronismo do terraform-docs e testes automatizados de módulo (`terraform test`).
+* **[Diagramas de Arquitetura](./docs/ARQUITETURA.md)** — split de DNS público/privado e fluxo do pipeline de CI/CD (JIT SSH), em Mermaid.
 
 ## 👨‍💻 Autor
 
