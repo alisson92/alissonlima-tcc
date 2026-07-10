@@ -1,3 +1,14 @@
+## Motivação
+
+Cria a VNet (equivalente à VPC da AWS), sub-redes públicas (Bastion, Load
+Balancer) e privadas (app/DB), além do NAT Gateway para saída de internet das
+sub-redes privadas. É o primeiro módulo da cadeia de composição — os demais
+dependem dos IDs de sub-rede/VNet gerados aqui.
+
+**Pendência conhecida:** a sub-rede `public_b` está órfã hoje (sem NIC/LB/NSG
+associado) desde que o NSG do ALB órfão parou de referenciá-la; ver
+`docs/BACKLOG.md` para a decisão já tomada (corrigir, mas ainda não agendado).
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 

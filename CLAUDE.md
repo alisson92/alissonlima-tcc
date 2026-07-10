@@ -55,7 +55,7 @@ Each `environments/<provider>/<env>/main.tf` wires reusable modules from `module
 2. **security** — Security Groups / NSGs for bastion, ALB, and app/db tier (least-privilege, referencing each other by ID rather than CIDR)
 3. **data_storage** — persistent volume for the DB server, pinned to the AZ networking chose
 4. **app_environment** — app server(s) (`app_server_count`) + DB server, private subnet only
-5. **bastion** (called `bastion_host` in AWS) — the sole public SSH entry point
+5. **bastion** (module block named `bastion_host` in both AWS and Azure) — the sole public SSH entry point
 6. **load_balancer** — ALB/equivalent in front of the app servers
 
 Every module block is gated with `count = var.create_environment ? 1 : 0`. This is the central pattern of the whole framework: setting `create_environment=false` and re-applying destroys all resources in an environment **without deleting any Terraform code**, so environments can be torn down between uses to save cost and recreated identically later. When editing any environment `main.tf`, preserve this toggle and the `module.x[0]` indexing it implies.
@@ -64,7 +64,7 @@ Every module block is gated with `count = var.create_environment ? 1 : 0`. This 
 
 `dns.tf` in each AWS/Azure environment handles two distinct concerns:
 - **Public DNS** via the `cloudflare` provider (proxied CNAME to the load balancer, unproxied A record to the bastion) — SSL/TLS is terminated at Cloudflare, not on the ALB.
-- **Private DNS** via `aws_route53_zone`/equivalent, VPC-associated, resolving internal hostnames like `db-server` and `app-server-N` for cross-node communication that never touches the public internet.
+- **Private DNS** via `aws_route53_zone`/equivalent, VPC-associated, resolving internal hostnames like `db-server` and `app-server` for cross-node communication that never touches the public internet. The hostname is only index-suffixed (`app-server-0`, `app-server-1`, ...) when `app_server_count > 1` (currently only `prod`); single-instance environments (`teste`, `homol`) resolve the unsuffixed `app-server`.
 
 ### Provider parity, not shared code
 
@@ -81,4 +81,4 @@ AWS and Azure implementations are **not** abstracted behind a common module — 
 
 ### Access model
 
-Documented in `docs/ACESSOS.md`: all internal access (app/db servers) is via SSH Agent Forwarding (`-A`) through the environment-and-provider-specific bastion (e.g. `bastion-aws-prod.alissonlima.dev.br`), then plain `ssh` to internal hostnames (`app-server-N.internal.alissonlima.dev.br`, `db-server.internal.alissonlima.dev.br`) resolved by the private Route53/DNS zone.
+Documented in `docs/ACESSOS.md`: all internal access (app/db servers) is via SSH Agent Forwarding (`-A`) through the environment-and-provider-specific bastion (e.g. `bastion-aws-prod.alissonlima.dev.br`), then plain `ssh` to internal hostnames (`app-server.internal.alissonlima.dev.br`, indexed as `app-server-N...` only where `app_server_count > 1`; `db-server.internal.alissonlima.dev.br`) resolved by the private Route53/DNS zone.

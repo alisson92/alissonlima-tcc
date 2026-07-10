@@ -1,3 +1,13 @@
+## Motivação
+
+Define os NSGs de Bastion e aplicação, espelhando o mesmo princípio de menor
+privilégio do lado AWS: regras referenciam a origem por ID/tag de NSG, não por
+CIDR aberto (exceção documentada: o NSG da aplicação aceita `*` na porta HTTP
+pública, pois o tráfego legítimo chega de fora da VNet via Cloudflare → LB —
+ver achado do Trivy em `docs/CI-QUALIDADE.md`). O invariante de referência por
+ID é verificado automaticamente pelos testes deste módulo
+(`tests/main.tftest.hcl`).
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 

@@ -1,3 +1,12 @@
+## Motivação
+
+O volume EBS é declarado num módulo próprio, separado de `app_environment`,
+para que seu ciclo de vida (criação/resize/retenção de dados) seja independente
+do ciclo de vida da instância EC2 do banco — permitindo, por exemplo,
+recriar o servidor de banco sem perder o volume. Precisa ser pinado
+explicitamente na mesma AZ da instância EC2 (`var.az`) porque um volume EBS
+só pode ser anexado a instâncias na mesma Zona de Disponibilidade.
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 

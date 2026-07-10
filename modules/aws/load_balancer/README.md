@@ -1,3 +1,12 @@
+## Motivação
+
+O Application Load Balancer expõe um único listener **HTTP** (porta 80), sem
+HTTPS — decisão intencional, não uma lacuna de segurança: o SSL/TLS é
+terminado na Cloudflare, que já entrega o tráfego tratado até o ALB (ver
+seção "DNS split" do `CLAUDE.md`). Esse comportamento é sinalizado pelo scanner
+Trivy em CI como finding esperado, documentado em `docs/CI-QUALIDADE.md` e
+`docs/BACKLOG.md` como risco já aceito.
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 

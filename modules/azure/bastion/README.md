@@ -1,3 +1,12 @@
+## Motivação
+
+O Bastion Host é o único recurso do ambiente com IP público e regra de
+ingresso SSH — todo acesso administrativo a app/DB passa por ele via SSH
+Agent Forwarding (ver `docs/ACESSOS.md`). Os registros de DNS foram
+deliberadamente movidos para fora deste módulo (ver nota técnica no
+`main.tf`) para evitar que ele dependa do provider `cloudflare`/DNS privado,
+mantendo-o "100% independente" como o próprio comentário do código descreve.
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
