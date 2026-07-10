@@ -1,3 +1,12 @@
+## Motivação
+
+O Bastion Host é o único recurso do ambiente com IP público e regra de
+ingresso SSH — todo acesso administrativo a app/DB passa por ele via SSH
+Agent Forwarding (ver `docs/ACESSOS.md`). O SG que o protege (`modules/aws/security`)
+só libera a porta 22 para o IP fixo do operador e, durante execuções do
+pipeline, para o IP do runner do GitHub Actions, aberto e fechado
+just-in-time (ver seção "CI/CD pipeline shape" do `CLAUDE.md`).
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 

@@ -1,3 +1,13 @@
+## Motivação
+
+Cria a VPC, sub-redes públicas (Bastion, ALB) e privadas (app/DB) distribuídas
+entre AZs, além do NAT Gateway. As sub-redes privadas não têm rota direta para
+a internet — apenas saída via NAT (para updates de pacote, por exemplo), sem
+nenhum caminho de entrada — reforçando o isolamento da camada de dados descrito
+no `README.md` da raiz. É o primeiro módulo da cadeia de composição porque
+todos os demais (security, data_storage, app_environment, bastion,
+load_balancer) dependem de IDs de sub-rede/VPC gerados aqui.
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 

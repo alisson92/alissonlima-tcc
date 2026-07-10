@@ -1,3 +1,13 @@
+## Motivação
+
+Define os Security Groups de Bastion, ALB e camada de aplicação/banco, seguindo
+o princípio de menor privilégio: cada regra referencia a origem por **ID de
+Security Group**, nunca por CIDR aberto (exceto a regra opcional de SSH direto
+para o IP fixo do operador). O Bastion é o único ponto de entrada SSH da rede
+privada — nenhuma outra regra permite SSH de origem externa. Esse invariante é
+verificado automaticamente em CI pelos testes deste módulo
+(`tests/main.tftest.hcl`, ver `docs/CI-QUALIDADE.md`).
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
