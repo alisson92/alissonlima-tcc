@@ -4,6 +4,18 @@ Este documento detalha os procedimentos para acessar a infraestrutura dos ambien
 
 O acesso aos servidores internos (Aplicação e Banco de Dados) é sempre realizado através de um "salto" pelo **Bastion Host** do respectivo provedor de nuvem, utilizando SSH Agent Forwarding (`-A`).
 
+```mermaid
+flowchart LR
+    Op(["Operador"])
+    BH["Bastion Host<br/>(bastion-provider-env.alissonlima.dev.br)"]
+    APP["App Server(s)<br/>(app-server[-N].internal...)"]
+    DB[("DB Server<br/>(db-server.internal...)")]
+
+    Op -->|"ssh -A (agent forwarding)"| BH
+    BH -->|ssh| APP
+    BH -->|ssh| DB
+```
+
 ---
 
 ## Ambiente de Teste - (TESTE)
