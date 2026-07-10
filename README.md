@@ -161,6 +161,7 @@ As instruções detalhadas para acessar os ambientes via SSH (através do Bastio
 
 * **[Anteprojeto](./docs/ANTEPROJETO%20-%20ALISSON%20CORREA%20LIMA.doc)** — documento que descreve o propósito e a motivação acadêmica deste projeto (TCC).
 * **[Gates de Qualidade no CI](./docs/CI-QUALIDADE.md)** — por que e como o pipeline de PR passou a rodar tflint, Trivy, verificação de sincronismo do terraform-docs e testes automatizados de módulo (`terraform test`).
+* **[Diagramas de Arquitetura](./docs/ARQUITETURA.md)** — split de DNS público/privado e fluxo do pipeline de CI/CD (JIT SSH), em Mermaid.
 
 ## 👨‍💻 Autor
 
