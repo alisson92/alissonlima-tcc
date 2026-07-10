@@ -59,6 +59,10 @@ Convenção: `[ ]` pendente · `[x]` concluído · cada item concluído ganha um
 
 ## Concluído recentemente (histórico curto, para contexto)
 
+- [x] **Criação deste checklist** (`docs/BACKLOG.md`) — consolidação das
+  pendências antes espalhadas em memória de conversa. Resolvido em
+  2026-07-10 — branch `docs/add-backlog-checklist` → PR #42 (squash merge em
+  `develop`, `29464e8`) → PR #43 (squash merge em `main`, `ddc4599`).
 - [x] **Verificação de paridade anteprojeto x código** — nenhuma lacuna
   encontrada entre os 5 objetivos específicos do anteprojeto (`docs/ANTEPROJETO
   - ALISSON CORREA LIMA.doc`) e o código atual. README atualizado para
