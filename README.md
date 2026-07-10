@@ -46,12 +46,15 @@ distribuído em múltiplas Zonas de Disponibilidade. Os componentes principais s
   bastion, load balancer e camada de aplicação/banco.
 * **Balanceamento de Carga (ALB / Azure LB):** Ponto de entrada único para a
   aplicação, recebendo tráfego HTTP já descriptografado da borda da Cloudflare e
-  distribuindo entre os servidores de aplicação.
+  distribuindo entre os servidores de aplicação, que servem a aplicação através
+  de um container Nginx.
 
 ## 🛠️ Tecnologias Utilizadas
 
 * **Terraform:** Para a declaração da infraestrutura como código (IaC).
-* **Ansible:** Para o gerenciamento de configuração pós-provisionamento (instalação de Docker, etc.).
+* **Ansible:** Para o gerenciamento de configuração pós-provisionamento — instalação
+  de Docker e Docker Compose, padronização de hostname entre os provedores e deploy
+  de um container Nginx (`playbook_docker.yml` e `playbook_nginx_container.yml`).
 * **GitHub Actions:** Como plataforma de orquestração e CI/CD para automação do fluxo de trabalho.
 * **AWS (Amazon Web Services) & Azure:** Como provedores de nuvem, com ambientes equivalentes em ambos.
 * **Cloudflare:** Para DNS público e terminação de SSL/TLS.
