@@ -1,3 +1,11 @@
+## Motivação
+
+O Azure Load Balancer (Standard SKU) expõe uma regra HTTP (porta 80), sem
+HTTPS — decisão intencional, não uma lacuna: o SSL/TLS é terminado na
+Cloudflare antes do tráfego chegar ao LB (ver seção "DNS split" do
+`CLAUDE.md`). Backend pool e health probe seguem a topologia padrão do
+Azure LB, equivalente ao Target Group + health check do ALB na AWS.
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
