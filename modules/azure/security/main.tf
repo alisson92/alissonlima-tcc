@@ -52,19 +52,11 @@ resource "azurerm_network_security_group" "application" {
     destination_address_prefix = "*"
   }
 
-  # NOVO: Permite o Health Probe do Azure Load Balancer
-  # Sem isso, o LB acha que a VM está fora do ar e não envia tráfego.
-  security_rule {
-    name                       = "AllowAzureLoadBalancerProbe"
-    priority                   = 105
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "*"
-    source_address_prefix      = "AzureLoadBalancer"
-    destination_address_prefix = "*"
-  }
+  # Regra "AllowAzureLoadBalancerProbe" (source AzureLoadBalancer) removida:
+  # o tráfego e o health probe agora chegam do Application Gateway, que roda
+  # dentro da VNet (subnet dedicada), não mais via serviço gerenciado externo
+  # com o service tag AzureLoadBalancer. Já é coberto pela regra AllowHTTPInbound
+  # acima (porta 80, source "*").
 
   security_rule {
     name                       = "AllowSSHFromBastion"
@@ -93,6 +85,55 @@ resource "azurerm_network_security_group" "application" {
   tags = var.tags
 }
 
+# 3. NSG para o Application Gateway (regras obrigatórias da Microsoft para v2)
+resource "azurerm_network_security_group" "appgw" {
+  name                = "nsg-appgw-${var.environment}"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+
+  # OBRIGATÓRIA: canal de gerenciamento do control plane do Application
+  # Gateway v2. Sem isso o provisionamento do recurso falha.
+  security_rule {
+    name                       = "AllowGatewayManagerInbound"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "65200-65535"
+    source_address_prefix      = "GatewayManager"
+    destination_address_prefix = "*"
+  }
+
+  # Tráfego público do listener HTTP (porta 80), vindo do Cloudflare.
+  security_rule {
+    name                       = "AllowHTTPInbound"
+    priority                   = 110
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "80"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  # Infra de health check da Azure.
+  security_rule {
+    name                       = "AllowAzureLoadBalancerInbound"
+    priority                   = 120
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "*"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "AzureLoadBalancer"
+    destination_address_prefix = "*"
+  }
+
+  tags = var.tags
+}
+
 # --- ASSOCIAÇÕES ---
 
 resource "azurerm_subnet_network_security_group_association" "bastion" {
@@ -108,4 +149,9 @@ resource "azurerm_subnet_network_security_group_association" "app_a" {
 resource "azurerm_subnet_network_security_group_association" "app_b" {
   subnet_id                 = var.private_subnet_ids[1]
   network_security_group_id = azurerm_network_security_group.application.id
+}
+
+resource "azurerm_subnet_network_security_group_association" "appgw" {
+  subnet_id                 = var.appgw_subnet_id
+  network_security_group_id = azurerm_network_security_group.appgw.id
 }

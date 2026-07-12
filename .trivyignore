@@ -1,0 +1,13 @@
+# IDs de findings do Trivy aceitos como risco intencional e documentado,
+# um por linha, com justificativa inline. Ver trivy.yaml para o contexto
+# geral e docs/BACKLOG.md para o histórico de triagem.
+
+# Ingress "*" na porta 80 dos NSGs "application" e "appgw" (Azure): risco
+# aceito e intencional. Caminho público real: cliente -> Cloudflare (proxied,
+# TLS termina lá) -> nova conexão HTTP da borda da Cloudflare para o
+# Application Gateway -> o NSG enxerga o IP da Cloudflare, não o do cliente
+# real, porque não há SNAT nesse trecho. Restringir para "VirtualNetwork"
+# quebraria o acesso público legítimo. Mitigação: WAF/filtragem já ocorre na
+# borda da Cloudflare antes do tráfego chegar ao origin. Ver
+# modules/azure/security/main.tf.
+AZU-0047

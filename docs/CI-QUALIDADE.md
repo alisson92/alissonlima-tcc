@@ -83,8 +83,11 @@ Terraform, a troca foi feita sem perda de cobertura e com garantia de manutenç�
 de longo prazo — importante para um projeto que deve continuar em uso após a
 apresentação do TCC.
 
-O `trivy.yaml` inicia com `skip-check: []` vazio, pronto para receber supressões
-justificadas (`# motivo da supressão`) durante a triagem.
+Supressões justificadas de findings específicos são feitas via `.trivyignore`
+(raiz do repo, descoberto automaticamente pelo Trivy), um ID por linha com o
+motivo em comentário — **não** via `trivy.yaml` (a chave
+`misconfiguration.skip-check`, usada numa primeira tentativa, não existe no
+schema do Trivy 0.70 e é ignorada silenciosamente, sem suprimir nada).
 
 **Execução:** um único job (não matrix — o `trivy config` varre recursivamente
 `modules/` e `environments/` numa só chamada), com upload do relatório em

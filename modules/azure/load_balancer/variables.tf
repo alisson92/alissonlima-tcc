@@ -18,3 +18,13 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "subnet_id" {
+  description = "ID da subnet dedicada ao Application Gateway (não pode ter outro recurso associado)."
+  type        = string
+}
+
+variable "backend_ip_addresses" {
+  description = "Lista de IPs privados dos app servers a colocar no backend pool."
+  type        = list(string)
+}

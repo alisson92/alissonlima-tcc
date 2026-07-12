@@ -32,6 +32,7 @@ module "security" {
   my_ip               = var.my_ip
   public_subnet_ids   = module.networking[0].public_subnet_ids
   private_subnet_ids  = module.networking[0].private_subnet_ids
+  appgw_subnet_id     = module.networking[0].appgw_subnet_id
   tags                = var.tags
 }
 
@@ -80,20 +81,14 @@ module "bastion_host" {
 
 # --- CAMADA 6: PONTO DE ENTRADA DA APLICAÇÃO (Load Balancer) ---
 module "load_balancer" {
-  count               = var.create_environment ? 1 : 0
-  source              = "../../../modules/azure/load_balancer"
-  resource_group_name = azurerm_resource_group.main[0].name
-  location            = azurerm_resource_group.main[0].location
-  environment         = var.environment_name
-  tags                = var.tags
-}
-
-# --- CAMADA 7: CONEXÕES FINAIS ---
-resource "azurerm_network_interface_backend_address_pool_association" "app_pool_assoc" {
-  count                   = var.create_environment ? var.app_server_count : 0
-  network_interface_id    = module.app_environment[0].app_server_nic_ids[count.index]
-  ip_configuration_name   = "internal"
-  backend_address_pool_id = module.load_balancer[0].backend_pool_id
+  count                = var.create_environment ? 1 : 0
+  source               = "../../../modules/azure/load_balancer"
+  resource_group_name  = azurerm_resource_group.main[0].name
+  location             = azurerm_resource_group.main[0].location
+  environment          = var.environment_name
+  subnet_id            = module.networking[0].appgw_subnet_id
+  backend_ip_addresses = module.app_environment[0].app_server_private_ips
+  tags                 = var.tags
 }
 
 moved {

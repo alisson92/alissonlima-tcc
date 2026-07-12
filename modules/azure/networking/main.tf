@@ -29,8 +29,13 @@ resource "azurerm_subnet" "private_a" {
   address_prefixes     = [cidrsubnet(var.vnet_cidr_block, 8, 1)]
 }
 
-resource "azurerm_subnet" "public_b" {
-  name                 = "subnet-public-b-${var.environment}"
+# Reaproveitada como subnet dedicada do Application Gateway (Camada 7 do LB
+# Azure). Antes ficava órfã (sem NIC/LB/NSG associado) depois da remoção do
+# NSG do ALB antigo. Azure exige que a subnet do Application Gateway não
+# tenha nenhum outro tipo de recurso associado, então ela não pode ser
+# reaproveitada para mais nada além disso.
+resource "azurerm_subnet" "appgw" {
+  name                 = "subnet-appgw-${var.environment}"
   resource_group_name  = var.resource_group_name
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefixes     = [cidrsubnet(var.vnet_cidr_block, 8, 2)]
@@ -101,4 +106,12 @@ resource "azurerm_dns_zone" "public" {
   tags = merge(var.tags, {
     Purpose = "Public Resolution for Azure Environment"
   })
+}
+
+# Subnet renomeada de "public_b" para "appgw" ao virar subnet dedicada do
+# Application Gateway — o moved block evita destroy/recreate da subnet já
+# existente em ambientes já provisionados.
+moved {
+  from = azurerm_subnet.public_b
+  to   = azurerm_subnet.appgw
 }
