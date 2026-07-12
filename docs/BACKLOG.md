@@ -37,11 +37,6 @@ Convenção: `[ ]` pendente · `[x]` concluído · cada item concluído ganha um
 
 ## Infraestrutura / Terraform
 
-- [ ] **Subnet `public_b` órfã no Azure** (`modules/azure/networking/main.tf`) —
-  ficou sem uso depois que a remoção do NSG do ALB órfão (item #3 do antigo
-  hardening) parou de referenciá-la. Sem NIC/LB/NSG associado hoje. Decisão
-  confirmada: vale corrigir (remover ou documentar por que existe), mas ainda
-  não agendado.
 - [ ] **`aws/teste` e `aws/homol`: `app_server_count` não é passado ao módulo
   `app_environment`** em `main.tf` (só `prod` passa). Hoje inofensivo porque o
   default do módulo já é `1` em ambos os casos — inconsistência cosmética, não
@@ -59,6 +54,31 @@ Convenção: `[ ]` pendente · `[x]` concluído · cada item concluído ganha um
 
 ## Concluído recentemente (histórico curto, para contexto)
 
+- [x] **Migração do Load Balancer Azure de L4 (Standard LB) para L7
+  (Application Gateway)** — em `prod`, refresh sucessivo na URL alternava
+  entre `app-server-0`/`app-server-1` na AWS (ALB, roteamento por
+  requisição), mas nunca na Azure. Causa raiz: `azurerm_lb` Standard decide o
+  backend uma vez por conexão TCP (hash de 5-tupla), e o DNS proxied no
+  Cloudflare mantém conexões persistentes com a origem — a alternância nunca
+  ficava visível mesmo com as 2 VMs saudáveis e corretamente associadas ao
+  backend pool. Migrado `modules/azure/load_balancer` para
+  `azurerm_application_gateway` (Standard_v2, capacidade fixa = 1,
+  `cookie_based_affinity = "Disabled"`), que roteia por requisição HTTP como
+  o ALB. Efeito colateral: a subnet `public_b`, órfã desde a remoção do NSG
+  do ALB antigo (item abaixo), foi reaproveitada como subnet dedicada do
+  Application Gateway. Mudança aplicada ao módulo compartilhado (vale para
+  `teste`/`homol`/`prod`), mas só testada/validada em `prod`, único ambiente
+  com `app_server_count > 1` — `teste`/`homol` herdam o módulo novo (AppGW
+  com 1 backend, comportamento equivalente ao LB antigo) sem necessidade de
+  reteste, e passam a pagar o custo por hora do Standard_v2 (maior que o
+  Standard LB) sempre que subirem. Resolvido em 2026-07-12 — branch
+  `feat/azure-appgw-l7-loadbalancer`.
+- [x] **Subnet `public_b` órfã no Azure** (`modules/azure/networking/main.tf`)
+  — ficou sem uso depois que a remoção do NSG do ALB órfão (item #3 do antigo
+  hardening) parou de referenciá-la. Resolvida como efeito colateral da
+  migração para Application Gateway acima: renomeada para `appgw` e virou a
+  subnet dedicada do novo Application Gateway. Resolvido em 2026-07-12 —
+  branch `feat/azure-appgw-l7-loadbalancer`.
 - [x] **Criação deste checklist** (`docs/BACKLOG.md`) — consolidação das
   pendências antes espalhadas em memória de conversa. Resolvido em
   2026-07-10 — branch `docs/add-backlog-checklist` → PR #42 (squash merge em
