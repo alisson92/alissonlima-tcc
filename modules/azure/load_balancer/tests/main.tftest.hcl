@@ -2,11 +2,11 @@ mock_provider "azurerm" {}
 
 variables {
   resource_group_name  = "rg-tcc-teste"
-  location              = "East US"
-  environment            = "teste"
-  tags                  = { Project = "tcc" }
-  subnet_id             = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-tcc-teste/providers/Microsoft.Network/virtualNetworks/vnet-teste/subnets/subnet-appgw"
-  backend_ip_addresses  = ["10.60.1.10", "10.60.1.11"]
+  location             = "East US"
+  environment          = "teste"
+  tags                 = { Project = "tcc" }
+  subnet_id            = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-tcc-teste/providers/Microsoft.Network/virtualNetworks/vnet-teste/subnets/subnet-appgw"
+  backend_ip_addresses = ["10.60.1.10", "10.60.1.11"]
 }
 
 run "plans_successfully" {
@@ -22,13 +22,17 @@ run "appgw_is_l7_standard_v2_on_port_80" {
   }
 
   assert {
-    condition     = azurerm_application_gateway.main.frontend_port[0].port == 80 && azurerm_application_gateway.main.backend_http_settings[0].port == 80
-    error_message = "Listener e backend devem operar na porta 80 (TLS termina na Cloudflare, não no Application Gateway)"
+    condition = anytrue([
+      for p in azurerm_application_gateway.main.frontend_port : p.port == 80
+    ])
+    error_message = "Listener deve operar na porta 80 (TLS termina na Cloudflare, não no Application Gateway)"
   }
 
   assert {
-    condition     = azurerm_application_gateway.main.backend_http_settings[0].cookie_based_affinity == "Disabled"
-    error_message = "Afinidade de sessão deve ficar desabilitada para permitir round-robin por requisição entre os app servers"
+    condition = anytrue([
+      for s in azurerm_application_gateway.main.backend_http_settings : s.port == 80 && s.cookie_based_affinity == "Disabled"
+    ])
+    error_message = "Backend deve operar na porta 80 com afinidade de sessão desabilitada, para permitir round-robin por requisição entre os app servers"
   }
 
   assert {
