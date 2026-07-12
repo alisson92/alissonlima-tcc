@@ -10,4 +10,13 @@ scan:
 misconfiguration:
   # IDs específicos a ignorar, um por linha, com o motivo documentado ao lado.
   # Ex.: "AVD-AWS-0104 # egress 0.0.0.0/0 intencional no SG do bastion"
-  skip-check: []
+  skip-check:
+    # Ingress "*" na porta 80 dos NSGs "application" e "appgw" (Azure): risco
+    # aceito e intencional. O caminho público é cliente -> Cloudflare (proxied,
+    # TLS termina lá) -> nova conexão HTTP da borda da Cloudflare para o
+    # Application Gateway -> o NSG enxerga o IP da Cloudflare, não o do
+    # cliente real, porque não há SNAT nesse trecho. Restringir para
+    # "VirtualNetwork" quebraria o acesso público legítimo. Mitigação: WAF/
+    # filtragem já ocorre na borda da Cloudflare antes do tráfego chegar ao
+    # origin. Ver modules/azure/security/main.tf.
+    - "AZU-0047"
