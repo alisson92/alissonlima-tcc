@@ -19,9 +19,10 @@ Convenção: `[ ]` pendente · `[x]` concluído · cada item concluído ganha um
 - [ ] **Triagem de findings Trivy** — `trivy.yaml` (raiz) roda em modo
   não-bloqueante (`exit-code: 0`). Do finding original de 2 itens, o NSG com
   `source_address_prefix = "*"` (`AZU-0047`) já foi formalmente suprimido via
-  `skip-check` (ver item concluído abaixo). Falta ainda: listener HTTP do ALB
-  sem HTTPS (intencional — TLS termina na Cloudflare) — confirmar e suprimir
-  com a mesma criteriosidade.
+  `.trivyignore` (ver item concluído abaixo — `misconfiguration.skip-check`
+  em `trivy.yaml` não é uma chave válida do schema do Trivy 0.70 e foi
+  removida). Falta ainda: listener HTTP do ALB sem HTTPS (intencional — TLS
+  termina na Cloudflare) — confirmar e suprimir com a mesma criteriosidade.
 - [ ] **Flipar tflint/Trivy para bloqueantes** — só depois das duas triagens
   acima.
 - [ ] **Adicionar tflint/Trivy como required status checks** no GitHub Ruleset
@@ -58,8 +59,12 @@ Convenção: `[ ]` pendente · `[x]` concluído · cada item concluído ganha um
   do NSG `application` em um segundo NSG (`appgw`), e o GitHub code scanning
   passou a reportar isso como "3 novos alertas críticos" no PR #53, mesmo
   sendo o mesmo risco já documentado (Cloudflare não faz SNAT no caminho de
-  entrada — o NSG nunca vê o IP real do cliente). Suprimido via
-  `misconfiguration.skip-check` em `trivy.yaml`, com justificativa inline.
+  entrada — o NSG nunca vê o IP real do cliente). Primeira tentativa de
+  supressão via `misconfiguration.skip-check` em `trivy.yaml` não teve efeito
+  algum — essa chave não existe no schema do Trivy 0.70 e era ignorada
+  silenciosamente (confirmado rodando o mesmo binário/versão do CI
+  localmente). Supressão real feita via `.trivyignore` (raiz do repo,
+  descoberto automaticamente pelo Trivy), com justificativa inline.
   Resolvido em 2026-07-12 — branch `feat/azure-appgw-l7-loadbalancer`.
 - [x] **Migração do Load Balancer Azure de L4 (Standard LB) para L7
   (Application Gateway)** — em `prod`, refresh sucessivo na URL alternava
