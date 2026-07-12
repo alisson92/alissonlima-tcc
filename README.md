@@ -82,10 +82,12 @@ distribuído em múltiplas Zonas de Disponibilidade. Os componentes principais s
 * **Segurança (Security Groups / NSGs):** Regras de firewall granulares que seguem o
   princípio do menor privilégio, referenciando-se por ID (não por CIDR aberto) entre
   bastion, load balancer e camada de aplicação/banco.
-* **Balanceamento de Carga (ALB / Azure LB):** Ponto de entrada único para a
-  aplicação, recebendo tráfego HTTP já descriptografado da borda da Cloudflare e
-  distribuindo entre os servidores de aplicação, que servem a aplicação através
-  de um container Nginx.
+* **Balanceamento de Carga (ALB / Application Gateway):** Ponto de entrada único
+  para a aplicação, recebendo tráfego HTTP já descriptografado da borda da
+  Cloudflare e distribuindo entre os servidores de aplicação, que servem a
+  aplicação através de um container Nginx. Ambos operam em Camada 7 (roteamento
+  por requisição HTTP, não por conexão TCP), garantindo distribuição real de
+  carga entre réplicas em ambas as clouds.
 
 ## 🛠️ Tecnologias Utilizadas
 
@@ -134,7 +136,7 @@ O projeto é organizado de forma modular para máxima reutilização e clareza:
 │       ├── data_storage/     # Managed Disk do banco de dados
 │       ├── app_environment/  # Servidor(es) de aplicação + banco de dados
 │       ├── bastion/          # Bastion Host
-│       └── load_balancer/    # Azure Load Balancer
+│       └── load_balancer/    # Application Gateway (L7)
 └── ...
 ```
 
