@@ -15,6 +15,7 @@ variables {
     "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-tcc-teste/providers/Microsoft.Network/virtualNetworks/vnet-teste/subnets/subnet-private-a",
     "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-tcc-teste/providers/Microsoft.Network/virtualNetworks/vnet-teste/subnets/subnet-private-b",
   ]
+  appgw_subnet_id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-tcc-teste/providers/Microsoft.Network/virtualNetworks/vnet-teste/subnets/subnet-appgw"
 }
 
 run "plans_successfully" {
@@ -36,7 +37,7 @@ run "bastion_nsg_scoped_to_owner_ip" {
 # Invariante de least-privilege: o SSH administrativo ao app tier só pode vir
 # de dentro da VNet (via Bastion), nunca de "*"/Internet. A exceção HTTP em
 # "*" é um risco aceito e documentado no próprio main.tf (item #4 do
-# HARDENING_CHECKLIST.md) por causa do caminho Cloudflare -> Standard LB.
+# HARDENING_CHECKLIST.md) por causa do caminho Cloudflare -> Application Gateway.
 run "app_nsg_ssh_restricted_to_virtual_network" {
   command = plan
 
