@@ -20,7 +20,7 @@ ID é verificado automaticamente pelos testes deste módulo
 
 | Name | Version |
 | ---- | ------- |
-| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | 4.80.0 |
+| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | ~> 4.80.0 |
 
 ## Modules
 
