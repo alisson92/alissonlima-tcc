@@ -21,7 +21,7 @@ associado) desde que o NSG do ALB órfão parou de referenciá-la; ver
 
 | Name | Version |
 | ---- | ------- |
-| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | 4.80.0 |
+| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | ~> 4.80.0 |
 
 ## Modules
 
