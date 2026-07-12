@@ -17,12 +17,11 @@ Convenção: `[ ]` pendente · `[x]` concluído · cada item concluído ganha um
   (outputs sem `description` nos módulos Azure). Falta decidir, por finding:
   corrigir ou suprimir com justificativa no `.tflint.hcl`.
 - [ ] **Triagem de findings Trivy** — `trivy.yaml` (raiz) roda em modo
-  não-bloqueante (`exit-code: 0`) e encontrou 2 findings, ambos aparentando ser
-  riscos já aceitos e documentados: NSG do app tier Azure com
-  `source_address_prefix = "*"` (documentado no `main.tf`, item #4 do antigo
-  `HARDENING_CHECKLIST.md`) e listener HTTP do ALB sem HTTPS (intencional — TLS
-  termina na Cloudflare). Falta confirmar formalmente e suprimir via
-  `skip-check` com justificativa, em vez de deixar como finding "solto".
+  não-bloqueante (`exit-code: 0`). Do finding original de 2 itens, o NSG com
+  `source_address_prefix = "*"` (`AZU-0047`) já foi formalmente suprimido via
+  `skip-check` (ver item concluído abaixo). Falta ainda: listener HTTP do ALB
+  sem HTTPS (intencional — TLS termina na Cloudflare) — confirmar e suprimir
+  com a mesma criteriosidade.
 - [ ] **Flipar tflint/Trivy para bloqueantes** — só depois das duas triagens
   acima.
 - [ ] **Adicionar tflint/Trivy como required status checks** no GitHub Ruleset
@@ -54,6 +53,14 @@ Convenção: `[ ]` pendente · `[x]` concluído · cada item concluído ganha um
 
 ## Concluído recentemente (histórico curto, para contexto)
 
+- [x] **Supressão formal do finding Trivy `AZU-0047`** (NSG ingress `*` na
+  porta 80) — a migração para Application Gateway duplicou a regra já aceita
+  do NSG `application` em um segundo NSG (`appgw`), e o GitHub code scanning
+  passou a reportar isso como "3 novos alertas críticos" no PR #53, mesmo
+  sendo o mesmo risco já documentado (Cloudflare não faz SNAT no caminho de
+  entrada — o NSG nunca vê o IP real do cliente). Suprimido via
+  `misconfiguration.skip-check` em `trivy.yaml`, com justificativa inline.
+  Resolvido em 2026-07-12 — branch `feat/azure-appgw-l7-loadbalancer`.
 - [x] **Migração do Load Balancer Azure de L4 (Standard LB) para L7
   (Application Gateway)** — em `prod`, refresh sucessivo na URL alternava
   entre `app-server-0`/`app-server-1` na AWS (ALB, roteamento por
