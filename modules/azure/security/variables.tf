@@ -38,3 +38,8 @@ variable "private_subnet_ids" {
   description = "Lista de IDs das sub-redes privadas vindas do módulo de networking."
   type        = list(string)
 }
+
+variable "appgw_subnet_id" {
+  description = "ID da subnet dedicada ao Application Gateway, vinda do módulo de networking."
+  type        = string
+}
