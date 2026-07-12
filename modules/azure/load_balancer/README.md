@@ -18,7 +18,7 @@ Azure LB, equivalente ao Target Group + health check do ALB na AWS.
 
 | Name | Version |
 | ---- | ------- |
-| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | 4.80.0 |
+| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | ~> 4.80.0 |
 
 ## Modules
 
