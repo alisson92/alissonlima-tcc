@@ -20,7 +20,7 @@ ID é verificado automaticamente pelos testes deste módulo
 
 | Name | Version |
 | ---- | ------- |
-| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | ~> 4.80.0 |
+| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | 4.80.0 |
 
 ## Modules
 
@@ -30,16 +30,19 @@ No modules.
 
 | Name | Type |
 | ---- | ---- |
+| [azurerm_network_security_group.appgw](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_security_group) | resource |
 | [azurerm_network_security_group.application](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_security_group) | resource |
 | [azurerm_network_security_group.bastion](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_security_group) | resource |
 | [azurerm_subnet_network_security_group_association.app_a](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet_network_security_group_association) | resource |
 | [azurerm_subnet_network_security_group_association.app_b](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet_network_security_group_association) | resource |
+| [azurerm_subnet_network_security_group_association.appgw](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet_network_security_group_association) | resource |
 | [azurerm_subnet_network_security_group_association.bastion](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet_network_security_group_association) | resource |
 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
+| <a name="input_appgw_subnet_id"></a> [appgw\_subnet\_id](#input\_appgw\_subnet\_id) | ID da subnet dedicada ao Application Gateway, vinda do módulo de networking. | `string` | n/a | yes |
 | <a name="input_environment"></a> [environment](#input\_environment) | Nome do ambiente (ex: teste, homol, prod) para usar nas tags. | `string` | n/a | yes |
 | <a name="input_location"></a> [location](#input\_location) | Região da Azure (Ex: East US). | `string` | n/a | yes |
 | <a name="input_my_ip"></a> [my\_ip](#input\_my\_ip) | Seu endereço IP público para permitir acesso SSH ao Bastion Host. | `string` | n/a | yes |
@@ -53,6 +56,7 @@ No modules.
 
 | Name | Description |
 | ---- | ----------- |
+| <a name="output_nsg_appgw_id"></a> [nsg\_appgw\_id](#output\_nsg\_appgw\_id) | ID do Network Security Group do Application Gateway. |
 | <a name="output_nsg_application_id"></a> [nsg\_application\_id](#output\_nsg\_application\_id) | ID do Network Security Group unificado para a aplicação (App e DB). |
 | <a name="output_nsg_bastion_id"></a> [nsg\_bastion\_id](#output\_nsg\_bastion\_id) | ID do Network Security Group do Bastion Host. |
 <!-- END_TF_DOCS -->
