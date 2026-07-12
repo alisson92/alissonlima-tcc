@@ -3,11 +3,16 @@ output "vnet_id" {
 }
 
 output "public_subnet_ids" {
-  value = [azurerm_subnet.public_a.id, azurerm_subnet.public_b.id]
+  value = [azurerm_subnet.public_a.id]
 }
 
 output "private_subnet_ids" {
   value = [azurerm_subnet.private_a.id, azurerm_subnet.private_b.id]
+}
+
+output "appgw_subnet_id" {
+  description = "ID da subnet dedicada ao Application Gateway (não pode ter outro recurso associado)."
+  value       = azurerm_subnet.appgw.id
 }
 
 # ESSENCIAIS PARA O DNS QUE CRIAMOS
