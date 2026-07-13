@@ -37,7 +37,7 @@ No modules.
 | <a name="input_environment"></a> [environment](#input\_environment) | Ambiente (ex: teste, homol, prod). | `string` | n/a | yes |
 | <a name="input_location"></a> [location](#input\_location) | Região da Azure. | `string` | n/a | yes |
 | <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name) | Nome do Resource Group. | `string` | n/a | yes |
-| <a name="input_tags"></a> [tags](#input\_tags) | n/a | `map(string)` | `{}` | no |
+| <a name="input_tags"></a> [tags](#input\_tags) | Um mapa de tags para ser aplicado nos recursos. | `map(string)` | `{}` | no |
 
 ## Outputs
 

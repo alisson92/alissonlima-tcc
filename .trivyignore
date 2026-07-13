@@ -10,7 +10,7 @@
 # quebraria o acesso público legítimo. Mitigação: WAF/filtragem já ocorre na
 # borda da Cloudflare antes do tráfego chegar ao origin. Ver
 # modules/azure/security/main.tf.
-AZU-0047
+AVD-AZU-0047
 
 # Listener HTTP (porta 80) do Application Load Balancer (AWS): risco aceito
 # e intencional. O TLS termina na Cloudflare (proxied), nunca no Load

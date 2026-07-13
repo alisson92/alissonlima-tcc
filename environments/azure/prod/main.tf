@@ -28,7 +28,6 @@ module "security" {
   resource_group_name = azurerm_resource_group.main[0].name
   location            = azurerm_resource_group.main[0].location
   environment         = var.environment_name
-  vnet_cidr_block     = var.vnet_cidr_block
   my_ip               = var.my_ip
   public_subnet_ids   = module.networking[0].public_subnet_ids
   private_subnet_ids  = module.networking[0].private_subnet_ids
@@ -55,13 +54,10 @@ module "app_environment" {
   environment         = var.environment_name
   private_subnet_ids  = module.networking[0].private_subnet_ids
   vm_size             = var.instance_type
-  # PADRONIZAÇÃO: Mudando para ubuntu para espelhar a AWS
-  admin_username        = "ubuntu"
-  public_key            = var.public_key
-  db_disk_id            = module.data_storage[0].db_disk_id
-  private_dns_zone_name = module.networking[0].private_dns_zone_name
-  app_server_count      = var.app_server_count
-  tags                  = var.tags
+  public_key          = var.public_key
+  db_disk_id          = module.data_storage[0].db_disk_id
+  app_server_count    = var.app_server_count
+  tags                = var.tags
 }
 
 # --- CAMADA 5: PONTO DE ACESSO (BASTION) ---
