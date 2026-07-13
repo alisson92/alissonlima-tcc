@@ -48,7 +48,7 @@ No modules.
 | <a name="input_public_key"></a> [public\_key](#input\_public\_key) | Conteúdo da chave pública SSH. | `string` | n/a | yes |
 | <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name) | Nome do Resource Group. | `string` | n/a | yes |
 | <a name="input_tags"></a> [tags](#input\_tags) | Um mapa de tags para ser aplicado nos recursos. | `map(string)` | n/a | yes |
-| <a name="input_vm_size"></a> [vm\_size](#input\_vm\_size) | Tamanho da VM (Ex: Standard\_B2ts\_v2). | `string` | `"Standard_B2ts_v2"` | no |
+| <a name="input_vm_size"></a> [vm\_size](#input\_vm\_size) | Tamanho da VM (Ex: Standard\_B1s). | `string` | `"Standard_B1s"` | no |
 
 ## Outputs
 

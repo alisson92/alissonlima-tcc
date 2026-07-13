@@ -19,9 +19,9 @@ variable "private_subnet_ids" {
 }
 
 variable "vm_size" {
-  description = "Tamanho da VM (Ex: Standard_B2ts_v2)."
+  description = "Tamanho da VM (Ex: Standard_B1s)."
   type        = string
-  default     = "Standard_B2ts_v2"
+  default     = "Standard_B1s"
 }
 
 variable "public_key" {

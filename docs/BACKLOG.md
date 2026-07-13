@@ -31,10 +31,31 @@ Convenção: `[ ]` pendente · `[x]` concluído · cada item concluído ganha um
     (`modules/azure/app_environment`, `modules/azure/bastion`,
     `environments/azure/{teste,homol,prod}`). Primeira tentativa usou
     `Standard_B1s_v2`, que não existe na família Bsv2 — corrigido depois que
-    o próprio `tflint` acusou `invalid value as size`.
+    o próprio `tflint` acusou `invalid value as size`. **Essa troca foi
+    revertida no dia seguinte** — ver item "Incidente: apply quebrado por
+    troca de VM size" abaixo.
   - `terraform validate` nos 3 ambientes Azure e `terraform test` nos
     módulos `security`/`app_environment` confirmaram nada quebrado.
   Resolvido em 2026-07-13 — branch `chore/flip-tflint-trivy-blocking`.
+- [x] **Incidente: apply quebrado por troca de VM size (Standard_B2ts_v2)** —
+  ao validar o PR #59 com `apply` real em `teste`/`homol`/`prod` via pipeline
+  (2026-07-13), os 3 ambientes falharam: `409 Conflict — exceeding approved
+  standardBsv2Family Cores quota (Current Limit: 0)`. A troca de
+  `Standard_B1s` (família Bv1, cota já aprovada) para `Standard_B2ts_v2`
+  (família Bsv2, nunca usada nesta subscription) não validou cota disponível
+  antes de aplicar — o retirement do B1s só é em nov/2028, não havia
+  urgência real para forçar a migração. Application Gateway chegou a ser
+  criado nos 3 ambientes antes da falha nas VMs (infra parcial, sem perda,
+  reaplicável). Correção: revertido `vm_size`/`instance_type` para
+  `Standard_B1s` nos mesmos 5 lugares, e a regra
+  `azurerm_linux_virtual_machine_retired_size` desabilitada no `.tflint.hcl`
+  raiz (documentada) para não voltar a bloquear o CI por causa disso.
+  Resolvido em 2026-07-13 — branch `fix/revert-vm-size-quota`.
+- [ ] **Pedir aumento de cota `standardBsv2Family` no portal Azure** — só
+  depois disso faz sentido tentar de novo a migração para
+  `Standard_B2ts_v2` (ou outro tamanho da família Bsv2/Basv2). Sem prazo
+  definido; revisitar a regra desabilitada no `.tflint.hcl` quando a cota
+  for aprovada.
 - [ ] **Triagem completa de findings Trivy** — `trivy.yaml` (raiz) roda em
   modo não-bloqueante (`exit-code: 0`). A narrativa anterior de "só 2
   achados" estava incompleta: o `trivy` CLI só respeita `--exit-code`
