@@ -5,7 +5,7 @@ variables {
   location              = "East US"
   resource_group_name   = "rg-tcc-teste"
   private_subnet_ids    = ["/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-tcc-teste/providers/Microsoft.Network/virtualNetworks/vnet-teste/subnets/subnet-private-a", "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-tcc-teste/providers/Microsoft.Network/virtualNetworks/vnet-teste/subnets/subnet-private-b"]
-  vm_size               = "Standard_B1s_v2"
+  vm_size               = "Standard_B2ts_v2"
   public_key            = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB6YgDl8A4rMXOEhmZsx/9H4/Gw1KAjOEsoPdZxKdtRS test-fixture@tcc"
   db_disk_id            = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-tcc-teste/providers/Microsoft.Compute/disks/disk-db-data-teste"
   app_server_count      = 2
