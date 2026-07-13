@@ -35,17 +35,35 @@ Convenção: `[ ]` pendente · `[x]` concluído · cada item concluído ganha um
   - `terraform validate` nos 3 ambientes Azure e `terraform test` nos
     módulos `security`/`app_environment` confirmaram nada quebrado.
   Resolvido em 2026-07-13 — branch `chore/flip-tflint-trivy-blocking`.
-- [x] **Triagem de findings Trivy** — `trivy.yaml` (raiz) roda em modo
-  não-bloqueante (`exit-code: 0`). Os 2 achados originais já estão
-  formalmente suprimidos via `.trivyignore`: NSG com
-  `source_address_prefix = "*"` (`AZU-0047`) e listener HTTP do ALB sem
-  HTTPS (`AVD-AWS-0054`, intencional — TLS termina na Cloudflare).
-  Resolvido em 2026-07-12 — branch `security/suppress-alb-http-listener-trivy`.
-- [x] **Flipar tflint/Trivy para bloqueantes** — removido
-  `continue-on-error: true` do job `tflint` e trocado `exit-code: '0'` →
-  `'1'` no job `trivy` em `.github/workflows/pr-validate.yml`, só depois de
-  validar localmente que os 12 módulos passam limpo no tflint. Resolvido em
-  2026-07-13 — branch `chore/flip-tflint-trivy-blocking`.
+- [ ] **Triagem completa de findings Trivy** — `trivy.yaml` (raiz) roda em
+  modo não-bloqueante (`exit-code: 0`). A narrativa anterior de "só 2
+  achados" estava incompleta: o `trivy` CLI só respeita `--exit-code`
+  quando a flag é passada explicitamente, então a suprimida `AZU-0047` nunca
+  foi realmente testada sob falha — e o ID usado no `.trivyignore` estava
+  **errado** (`AZU-0047` em vez do real `AVD-AZU-0047`; mesmo tipo de erro
+  silencioso do episódio `misconfiguration.skip-check`, dessa vez mascarado
+  pelo `exit-code: 0` do job). ID corrigido em 2026-07-13
+  (`chore/flip-tflint-trivy-blocking`), e `AVD-AWS-0054` (que já usava o
+  prefixo certo) confirmado suprimido de verdade.
+  Rodando `trivy config . --exit-code 1` (scan completo do repo, não só o
+  módulo isolado) aparecem **~39 findings reais adicionais**, não cobertos
+  pela triagem original: 12 CRITICAL de SG com ingress público, 9 CRITICAL
+  de SG com egress público amplo, 6 HIGH de subnet com IP público associado,
+  3 HIGH de ALB sem `drop_invalid_header_fields`/exposto publicamente
+  (`AVD-AWS-0052`/`0053`, já sabidos, fora de escopo da supressão do
+  listener HTTP), achados de S3 sem public access block (4), bucket sem
+  criptografia com chave gerenciada pelo cliente, e TLS antigo em Storage
+  Account Azure. Precisa de uma rodada de triagem própria, caso a caso
+  (corrigir vs. aceitar como risco de ambiente efêmero de demo), antes de
+  virar bloqueante.
+- [x] **Flipar tflint para bloqueante** — removido `continue-on-error: true`
+  do job `tflint` em `.github/workflows/pr-validate.yml`, validado
+  localmente que os 12 módulos da matrix passam limpo, e confirmado verde no
+  CI real do PR. Resolvido em 2026-07-13 — branch
+  `chore/flip-tflint-trivy-blocking`.
+- [ ] **Flipar Trivy para bloqueante** — depende da triagem completa acima;
+  tentativa neste PR foi revertida (`exit-code` voltou de `'1'` para `'0'`)
+  ao descobrir o escopo real de ~39 findings.
 - [ ] **Adicionar tflint/Trivy como required status checks** no GitHub Ruleset
   `protect-main-develop` (ver histórico em memória `project_branch_protection_hardening`)
   — só depois do item anterior.
