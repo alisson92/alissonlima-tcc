@@ -12,18 +12,25 @@ Convenção: `[ ]` pendente · `[x]` concluído · cada item concluído ganha um
 
 ## CI / Qualidade
 
-- [ ] **Triagem de findings tflint** — `.tflint.hcl` (raiz) já roda em modo
-  `continue-on-error: true` na matrix de 12 módulos e encontrou findings reais
-  (outputs sem `description` nos módulos Azure). Falta decidir, por finding:
-  corrigir ou suprimir com justificativa no `.tflint.hcl`.
+- [x] **Triagem de findings tflint** — `.tflint.hcl` (raiz) roda em modo
+  `continue-on-error: true` na matrix de 12 módulos. Único finding real: 5
+  outputs sem `description` em `modules/azure/networking/outputs.tf`
+  (`vnet_id`, `public_subnet_ids`, `private_subnet_ids`,
+  `public_dns_zone_name`, `private_dns_zone_name`) — corrigido diretamente
+  (não era um caso de risco aceito, apenas omissão), com README regenerado
+  via `terraform-docs v0.24.0` (mesma versão pinada no CI, para evitar diff
+  de formatação). Demais módulos Azure já tinham todos os outputs
+  documentados. Resolvido em 2026-07-12 — branch
+  `chore/tflint-networking-output-descriptions`.
 - [x] **Triagem de findings Trivy** — `trivy.yaml` (raiz) roda em modo
   não-bloqueante (`exit-code: 0`). Os 2 achados originais já estão
   formalmente suprimidos via `.trivyignore`: NSG com
   `source_address_prefix = "*"` (`AZU-0047`) e listener HTTP do ALB sem
   HTTPS (`AVD-AWS-0054`, intencional — TLS termina na Cloudflare).
   Resolvido em 2026-07-12 — branch `security/suppress-alb-http-listener-trivy`.
-- [ ] **Flipar tflint/Trivy para bloqueantes** — só depois da triagem tflint
-  acima (a triagem Trivy já está concluída).
+- [ ] **Flipar tflint/Trivy para bloqueantes** — as duas triagens acima já
+  estão concluídas; falta só executar a mudança (`continue-on-error: false`
+  em tflint, `exit-code: 1` em `trivy.yaml`).
 - [ ] **Adicionar tflint/Trivy como required status checks** no GitHub Ruleset
   `protect-main-develop` (ver histórico em memória `project_branch_protection_hardening`)
   — só depois do item anterior.
