@@ -12,25 +12,40 @@ Convenção: `[ ]` pendente · `[x]` concluído · cada item concluído ganha um
 
 ## CI / Qualidade
 
-- [x] **Triagem de findings tflint** — `.tflint.hcl` (raiz) roda em modo
-  `continue-on-error: true` na matrix de 12 módulos. Único finding real: 5
-  outputs sem `description` em `modules/azure/networking/outputs.tf`
-  (`vnet_id`, `public_subnet_ids`, `private_subnet_ids`,
-  `public_dns_zone_name`, `private_dns_zone_name`) — corrigido diretamente
-  (não era um caso de risco aceito, apenas omissão), com README regenerado
-  via `terraform-docs v0.24.0` (mesma versão pinada no CI, para evitar diff
-  de formatação). Demais módulos Azure já tinham todos os outputs
-  documentados. Resolvido em 2026-07-12 — branch
-  `chore/tflint-networking-output-descriptions`.
+- [x] **Triagem de findings tflint** — a primeira passada (2026-07-12, branch
+  `chore/tflint-networking-output-descriptions`) tratou só 5 outputs sem
+  `description` em `modules/azure/networking`, mas a triagem estava
+  incompleta: rodando `tflint v0.63.1` (versão do CI) nos 12 módulos da
+  matrix apareceram **13 findings reais em mais 4 módulos Azure**. Todos
+  corrigidos:
+  - 7 variáveis sem `description` (`modules/azure/data_storage`,
+    `modules/azure/app_environment`) — documentadas.
+  - 3 variáveis não usadas — dead code confirmado por `grep` (nunca
+    referenciadas em `main.tf`, sem equivalente de paridade na AWS):
+    `vnet_cidr_block` (`modules/azure/security`), `admin_username` e
+    `private_dns_zone_name` (`modules/azure/app_environment`) — removidas
+    junto com os argumentos correspondentes nos 3
+    `environments/azure/*/main.tf` e nos `tests/main.tftest.hcl`.
+  - `Standard_B1s` (VM size com retirement anunciado para nov/2028, ver
+    Microsoft Learn) trocado por `Standard_B2ts_v2` em 5 lugares
+    (`modules/azure/app_environment`, `modules/azure/bastion`,
+    `environments/azure/{teste,homol,prod}`). Primeira tentativa usou
+    `Standard_B1s_v2`, que não existe na família Bsv2 — corrigido depois que
+    o próprio `tflint` acusou `invalid value as size`.
+  - `terraform validate` nos 3 ambientes Azure e `terraform test` nos
+    módulos `security`/`app_environment` confirmaram nada quebrado.
+  Resolvido em 2026-07-13 — branch `chore/flip-tflint-trivy-blocking`.
 - [x] **Triagem de findings Trivy** — `trivy.yaml` (raiz) roda em modo
   não-bloqueante (`exit-code: 0`). Os 2 achados originais já estão
   formalmente suprimidos via `.trivyignore`: NSG com
   `source_address_prefix = "*"` (`AZU-0047`) e listener HTTP do ALB sem
   HTTPS (`AVD-AWS-0054`, intencional — TLS termina na Cloudflare).
   Resolvido em 2026-07-12 — branch `security/suppress-alb-http-listener-trivy`.
-- [ ] **Flipar tflint/Trivy para bloqueantes** — as duas triagens acima já
-  estão concluídas; falta só executar a mudança (`continue-on-error: false`
-  em tflint, `exit-code: 1` em `trivy.yaml`).
+- [x] **Flipar tflint/Trivy para bloqueantes** — removido
+  `continue-on-error: true` do job `tflint` e trocado `exit-code: '0'` →
+  `'1'` no job `trivy` em `.github/workflows/pr-validate.yml`, só depois de
+  validar localmente que os 12 módulos passam limpo no tflint. Resolvido em
+  2026-07-13 — branch `chore/flip-tflint-trivy-blocking`.
 - [ ] **Adicionar tflint/Trivy como required status checks** no GitHub Ruleset
   `protect-main-develop` (ver histórico em memória `project_branch_protection_hardening`)
   — só depois do item anterior.
