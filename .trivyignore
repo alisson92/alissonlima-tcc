@@ -11,3 +11,11 @@
 # borda da Cloudflare antes do tráfego chegar ao origin. Ver
 # modules/azure/security/main.tf.
 AZU-0047
+
+# Listener HTTP (porta 80) do Application Load Balancer (AWS): risco aceito
+# e intencional. O TLS termina na Cloudflare (proxied), nunca no Load
+# Balancer — o tráfego que chega ao ALB já passou pela borda da Cloudflare.
+# Adicionar um listener HTTPS aqui exigiria gerenciar certificados na AWS
+# (ACM) duplicando a função que a Cloudflare já cumpre. Ver
+# modules/aws/load_balancer/main.tf.
+AVD-AWS-0054
