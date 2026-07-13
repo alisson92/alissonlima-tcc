@@ -32,7 +32,7 @@ resource "azurerm_linux_virtual_machine" "bastion" {
   computer_name       = "bastion"
   resource_group_name = var.resource_group_name
   location            = var.location
-  size                = "Standard_B1s"
+  size                = "Standard_B1s_v2"
 
   # PADRONIZAÇÃO: Usuário 'ubuntu' para paridade total com AWS
   admin_username = var.admin_username
