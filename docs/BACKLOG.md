@@ -16,15 +16,14 @@ Convenção: `[ ]` pendente · `[x]` concluído · cada item concluído ganha um
   `continue-on-error: true` na matrix de 12 módulos e encontrou findings reais
   (outputs sem `description` nos módulos Azure). Falta decidir, por finding:
   corrigir ou suprimir com justificativa no `.tflint.hcl`.
-- [ ] **Triagem de findings Trivy** — `trivy.yaml` (raiz) roda em modo
-  não-bloqueante (`exit-code: 0`). Do finding original de 2 itens, o NSG com
-  `source_address_prefix = "*"` (`AZU-0047`) já foi formalmente suprimido via
-  `.trivyignore` (ver item concluído abaixo — `misconfiguration.skip-check`
-  em `trivy.yaml` não é uma chave válida do schema do Trivy 0.70 e foi
-  removida). Falta ainda: listener HTTP do ALB sem HTTPS (intencional — TLS
-  termina na Cloudflare) — confirmar e suprimir com a mesma criteriosidade.
-- [ ] **Flipar tflint/Trivy para bloqueantes** — só depois das duas triagens
-  acima.
+- [x] **Triagem de findings Trivy** — `trivy.yaml` (raiz) roda em modo
+  não-bloqueante (`exit-code: 0`). Os 2 achados originais já estão
+  formalmente suprimidos via `.trivyignore`: NSG com
+  `source_address_prefix = "*"` (`AZU-0047`) e listener HTTP do ALB sem
+  HTTPS (`AVD-AWS-0054`, intencional — TLS termina na Cloudflare).
+  Resolvido em 2026-07-12 — branch `security/suppress-alb-http-listener-trivy`.
+- [ ] **Flipar tflint/Trivy para bloqueantes** — só depois da triagem tflint
+  acima (a triagem Trivy já está concluída).
 - [ ] **Adicionar tflint/Trivy como required status checks** no GitHub Ruleset
   `protect-main-develop` (ver histórico em memória `project_branch_protection_hardening`)
   — só depois do item anterior.
@@ -54,6 +53,15 @@ Convenção: `[ ]` pendente · `[x]` concluído · cada item concluído ganha um
 
 ## Concluído recentemente (histórico curto, para contexto)
 
+- [x] **Supressão formal do finding Trivy `AVD-AWS-0054`** (listener HTTP do
+  ALB sem HTTPS) — segundo e último dos 2 achados originais do Trivy. ID
+  confirmado rodando `trivy config modules/aws/load_balancer` localmente
+  (não estava documentado em lugar nenhum do repo antes, só em prosa).
+  Risco aceito e intencional: o TLS termina na Cloudflare (proxied), nunca
+  no Load Balancer — adicionar um listener HTTPS no ALB exigiria gerenciar
+  certificados via ACM duplicando o que a Cloudflare já cumpre. Suprimido
+  via `.trivyignore`, mesmo padrão usado para `AZU-0047`. Resolvido em
+  2026-07-12 — branch `security/suppress-alb-http-listener-trivy`.
 - [x] **Supressão formal do finding Trivy `AZU-0047`** (NSG ingress `*` na
   porta 80) — a migração para Application Gateway duplicou a regra já aceita
   do NSG `application` em um segundo NSG (`appgw`), e o GitHub code scanning
