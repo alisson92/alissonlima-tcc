@@ -20,6 +20,7 @@ variable "disk_size_gb" {
 }
 
 variable "tags" {
-  type    = map(string)
-  default = {}
+  description = "Um mapa de tags para ser aplicado nos recursos."
+  type        = map(string)
+  default     = {}
 }

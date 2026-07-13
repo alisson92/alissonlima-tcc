@@ -1,18 +1,27 @@
-variable "environment" { type = string }
-variable "location" { type = string }
-variable "resource_group_name" { type = string }
-variable "private_subnet_ids" { type = list(string) }
+variable "environment" {
+  description = "Nome do ambiente (ex: teste, homol, prod)."
+  type        = string
+}
+
+variable "location" {
+  description = "Região da Azure."
+  type        = string
+}
+
+variable "resource_group_name" {
+  description = "Nome do Resource Group."
+  type        = string
+}
+
+variable "private_subnet_ids" {
+  description = "Lista de IDs das sub-redes privadas onde as VMs serão criadas."
+  type        = list(string)
+}
 
 variable "vm_size" {
   description = "Tamanho da VM (Ex: Standard_B1s)."
   type        = string
   default     = "Standard_B1s"
-}
-
-variable "admin_username" {
-  description = "Usuário administrador das VMs."
-  type        = string
-  default     = "adminuser"
 }
 
 variable "public_key" {
@@ -25,14 +34,13 @@ variable "db_disk_id" {
   type        = string
 }
 
-variable "private_dns_zone_name" {
-  description = "Nome da zona de DNS privado na Azure."
-  type        = string
-}
-
 variable "app_server_count" {
-  type    = number
-  default = 1
+  description = "Quantidade de servidores de aplicação a serem criados."
+  type        = number
+  default     = 1
 }
 
-variable "tags" { type = map(string) }
+variable "tags" {
+  description = "Um mapa de tags para ser aplicado nos recursos."
+  type        = map(string)
+}

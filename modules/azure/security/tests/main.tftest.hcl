@@ -3,7 +3,6 @@ mock_provider "azurerm" {}
 variables {
   resource_group_name = "rg-tcc-teste"
   location            = "East US"
-  vnet_cidr_block     = "10.60.0.0/16"
   environment         = "teste"
   my_ip               = "203.0.113.10/32"
   tags                = { Project = "tcc" }

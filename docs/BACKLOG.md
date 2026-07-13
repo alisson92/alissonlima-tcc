@@ -12,25 +12,79 @@ Convenção: `[ ]` pendente · `[x]` concluído · cada item concluído ganha um
 
 ## CI / Qualidade
 
-- [x] **Triagem de findings tflint** — `.tflint.hcl` (raiz) roda em modo
-  `continue-on-error: true` na matrix de 12 módulos. Único finding real: 5
-  outputs sem `description` em `modules/azure/networking/outputs.tf`
-  (`vnet_id`, `public_subnet_ids`, `private_subnet_ids`,
-  `public_dns_zone_name`, `private_dns_zone_name`) — corrigido diretamente
-  (não era um caso de risco aceito, apenas omissão), com README regenerado
-  via `terraform-docs v0.24.0` (mesma versão pinada no CI, para evitar diff
-  de formatação). Demais módulos Azure já tinham todos os outputs
-  documentados. Resolvido em 2026-07-12 — branch
-  `chore/tflint-networking-output-descriptions`.
-- [x] **Triagem de findings Trivy** — `trivy.yaml` (raiz) roda em modo
-  não-bloqueante (`exit-code: 0`). Os 2 achados originais já estão
-  formalmente suprimidos via `.trivyignore`: NSG com
-  `source_address_prefix = "*"` (`AZU-0047`) e listener HTTP do ALB sem
-  HTTPS (`AVD-AWS-0054`, intencional — TLS termina na Cloudflare).
-  Resolvido em 2026-07-12 — branch `security/suppress-alb-http-listener-trivy`.
-- [ ] **Flipar tflint/Trivy para bloqueantes** — as duas triagens acima já
-  estão concluídas; falta só executar a mudança (`continue-on-error: false`
-  em tflint, `exit-code: 1` em `trivy.yaml`).
+- [x] **Triagem de findings tflint** — a primeira passada (2026-07-12, branch
+  `chore/tflint-networking-output-descriptions`) tratou só 5 outputs sem
+  `description` em `modules/azure/networking`, mas a triagem estava
+  incompleta: rodando `tflint v0.63.1` (versão do CI) nos 12 módulos da
+  matrix apareceram **13 findings reais em mais 4 módulos Azure**. Todos
+  corrigidos:
+  - 7 variáveis sem `description` (`modules/azure/data_storage`,
+    `modules/azure/app_environment`) — documentadas.
+  - 3 variáveis não usadas — dead code confirmado por `grep` (nunca
+    referenciadas em `main.tf`, sem equivalente de paridade na AWS):
+    `vnet_cidr_block` (`modules/azure/security`), `admin_username` e
+    `private_dns_zone_name` (`modules/azure/app_environment`) — removidas
+    junto com os argumentos correspondentes nos 3
+    `environments/azure/*/main.tf` e nos `tests/main.tftest.hcl`.
+  - `Standard_B1s` (VM size com retirement anunciado para nov/2028, ver
+    Microsoft Learn) trocado por `Standard_B2ts_v2` em 5 lugares
+    (`modules/azure/app_environment`, `modules/azure/bastion`,
+    `environments/azure/{teste,homol,prod}`). Primeira tentativa usou
+    `Standard_B1s_v2`, que não existe na família Bsv2 — corrigido depois que
+    o próprio `tflint` acusou `invalid value as size`. **Essa troca foi
+    revertida no dia seguinte** — ver item "Incidente: apply quebrado por
+    troca de VM size" abaixo.
+  - `terraform validate` nos 3 ambientes Azure e `terraform test` nos
+    módulos `security`/`app_environment` confirmaram nada quebrado.
+  Resolvido em 2026-07-13 — branch `chore/flip-tflint-trivy-blocking`.
+- [x] **Incidente: apply quebrado por troca de VM size (Standard_B2ts_v2)** —
+  ao validar o PR #59 com `apply` real em `teste`/`homol`/`prod` via pipeline
+  (2026-07-13), os 3 ambientes falharam: `409 Conflict — exceeding approved
+  standardBsv2Family Cores quota (Current Limit: 0)`. A troca de
+  `Standard_B1s` (família Bv1, cota já aprovada) para `Standard_B2ts_v2`
+  (família Bsv2, nunca usada nesta subscription) não validou cota disponível
+  antes de aplicar — o retirement do B1s só é em nov/2028, não havia
+  urgência real para forçar a migração. Application Gateway chegou a ser
+  criado nos 3 ambientes antes da falha nas VMs (infra parcial, sem perda,
+  reaplicável). Correção: revertido `vm_size`/`instance_type` para
+  `Standard_B1s` nos mesmos 5 lugares, e a regra
+  `azurerm_linux_virtual_machine_retired_size` desabilitada no `.tflint.hcl`
+  raiz (documentada) para não voltar a bloquear o CI por causa disso.
+  Resolvido em 2026-07-13 — branch `fix/revert-vm-size-quota`.
+- [ ] **Pedir aumento de cota `standardBsv2Family` no portal Azure** — só
+  depois disso faz sentido tentar de novo a migração para
+  `Standard_B2ts_v2` (ou outro tamanho da família Bsv2/Basv2). Sem prazo
+  definido; revisitar a regra desabilitada no `.tflint.hcl` quando a cota
+  for aprovada.
+- [ ] **Triagem completa de findings Trivy** — `trivy.yaml` (raiz) roda em
+  modo não-bloqueante (`exit-code: 0`). A narrativa anterior de "só 2
+  achados" estava incompleta: o `trivy` CLI só respeita `--exit-code`
+  quando a flag é passada explicitamente, então a suprimida `AZU-0047` nunca
+  foi realmente testada sob falha — e o ID usado no `.trivyignore` estava
+  **errado** (`AZU-0047` em vez do real `AVD-AZU-0047`; mesmo tipo de erro
+  silencioso do episódio `misconfiguration.skip-check`, dessa vez mascarado
+  pelo `exit-code: 0` do job). ID corrigido em 2026-07-13
+  (`chore/flip-tflint-trivy-blocking`), e `AVD-AWS-0054` (que já usava o
+  prefixo certo) confirmado suprimido de verdade.
+  Rodando `trivy config . --exit-code 1` (scan completo do repo, não só o
+  módulo isolado) aparecem **~39 findings reais adicionais**, não cobertos
+  pela triagem original: 12 CRITICAL de SG com ingress público, 9 CRITICAL
+  de SG com egress público amplo, 6 HIGH de subnet com IP público associado,
+  3 HIGH de ALB sem `drop_invalid_header_fields`/exposto publicamente
+  (`AVD-AWS-0052`/`0053`, já sabidos, fora de escopo da supressão do
+  listener HTTP), achados de S3 sem public access block (4), bucket sem
+  criptografia com chave gerenciada pelo cliente, e TLS antigo em Storage
+  Account Azure. Precisa de uma rodada de triagem própria, caso a caso
+  (corrigir vs. aceitar como risco de ambiente efêmero de demo), antes de
+  virar bloqueante.
+- [x] **Flipar tflint para bloqueante** — removido `continue-on-error: true`
+  do job `tflint` em `.github/workflows/pr-validate.yml`, validado
+  localmente que os 12 módulos da matrix passam limpo, e confirmado verde no
+  CI real do PR. Resolvido em 2026-07-13 — branch
+  `chore/flip-tflint-trivy-blocking`.
+- [ ] **Flipar Trivy para bloqueante** — depende da triagem completa acima;
+  tentativa neste PR foi revertida (`exit-code` voltou de `'1'` para `'0'`)
+  ao descobrir o escopo real de ~39 findings.
 - [ ] **Adicionar tflint/Trivy como required status checks** no GitHub Ruleset
   `protect-main-develop` (ver histórico em memória `project_branch_protection_hardening`)
   — só depois do item anterior.

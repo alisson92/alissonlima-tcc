@@ -50,7 +50,6 @@ No modules.
 | <a name="input_public_subnet_ids"></a> [public\_subnet\_ids](#input\_public\_subnet\_ids) | Lista de IDs das sub-redes públicas vindas do módulo de networking. | `list(string)` | n/a | yes |
 | <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name) | Nome do Resource Group onde os NSGs serão criados. | `string` | n/a | yes |
 | <a name="input_tags"></a> [tags](#input\_tags) | Um mapa de tags para ser aplicado nos recursos. | `map(string)` | `{}` | no |
-| <a name="input_vnet_cidr_block"></a> [vnet\_cidr\_block](#input\_vnet\_cidr\_block) | O bloco CIDR da VNet para usar nas regras de segurança. | `string` | n/a | yes |
 
 ## Outputs
 

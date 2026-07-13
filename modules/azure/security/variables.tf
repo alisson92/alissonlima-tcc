@@ -8,11 +8,6 @@ variable "location" {
   type        = string
 }
 
-variable "vnet_cidr_block" {
-  description = "O bloco CIDR da VNet para usar nas regras de segurança."
-  type        = string
-}
-
 variable "environment" {
   description = "Nome do ambiente (ex: teste, homol, prod) para usar nas tags."
   type        = string
