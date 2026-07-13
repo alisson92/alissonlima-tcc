@@ -27,9 +27,9 @@ variable "vnet_cidr_block" {
 }
 
 variable "instance_type" {
-  description = "O tipo da instância da VM (Standard_B1s_v2, Standard_B2s, etc)."
+  description = "O tipo da instância da VM (Standard_B2ts_v2, Standard_B2s, etc)."
   type        = string
-  default     = "Standard_B1s_v2"
+  default     = "Standard_B2ts_v2"
 }
 
 variable "lb_dns_name" {
