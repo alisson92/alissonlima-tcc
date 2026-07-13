@@ -93,21 +93,21 @@ schema do Trivy 0.70 e é ignorada silenciosamente, sem suprimir nada).
 `modules/` e `environments/` numa só chamada), com upload do relatório em
 formato SARIF para a aba *Security* do GitHub.
 
-**Status inicial:** `exit-code: 0` (não-bloqueante). Já encontrou 2 achados reais
-na primeira execução:
-- NSG do app tier Azure com `source_address_prefix = "*"` — **risco já aceito e
-  documentado diretamente no `main.tf`** (ver comentário no código, item #4 do
-  `HARDENING_CHECKLIST.md`): o tráfego HTTP público legítimo chega a essa
-  sub-rede privada vindo de fora da VNet (Cloudflare → LB → app), então
-  restringir para `VirtualNetwork` quebraria o acesso real.
-- Listener HTTP do ALB (AWS) sem HTTPS — intencional, já que o TLS termina na
-  Cloudflare, não no Load Balancer (ver seção de DNS/arquitetura no
-  `CLAUDE.md`).
+**Status inicial:** `exit-code: 0` (não-bloqueante). Encontrou 2 achados reais
+na primeira execução, ambos já formalmente suprimidos via `.trivyignore`:
+- `AZU-0047` — NSG do app tier Azure com `source_address_prefix = "*"` —
+  risco já aceito e documentado diretamente no `main.tf` (ver comentário no
+  código, item #4 do `HARDENING_CHECKLIST.md`): o tráfego HTTP público
+  legítimo chega a essa sub-rede privada vindo de fora da VNet (Cloudflare →
+  LB → app), então restringir para `VirtualNetwork` quebraria o acesso real.
+- `AVD-AWS-0054` — Listener HTTP do ALB (AWS) sem HTTPS — intencional, já que
+  o TLS termina na Cloudflare, não no Load Balancer (ver seção de DNS/
+  arquitetura no `CLAUDE.md`).
 
 Ambos os achados já eram comportamentos conscientes e documentados no código —
-o scanner apenas os tornou visíveis de forma automatizada. A triagem consiste em
-formalizar essas exceções em `trivy.yaml` com a justificativa, em vez de deixar
-o job falhando indefinidamente.
+o scanner apenas os tornou visíveis de forma automatizada. A triagem consistiu
+em formalizar essas exceções no `.trivyignore` com a justificativa, em vez de
+deixar o job falhando indefinidamente.
 
 ### 3. `terraform-docs-check` — Verificação de sincronismo dos READMEs
 
