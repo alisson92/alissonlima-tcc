@@ -95,11 +95,9 @@ jobs:
       - name: tflint --init (instala plugins aws/azurerm do .tflint.hcl)
         run: tflint --init
 
-      # Não-bloqueante por enquanto: findings pré-existentes nos 12 módulos
-      # ainda não foram triados/suprimidos. Remover continue-on-error depois
-      # da triagem, quando este job virar required status check.
+      # Bloqueante: findings pré-existentes nos 12 módulos já foram
+      # triados (corrigidos ou removidos como dead code). Ver docs/BACKLOG.md.
       - name: tflint
-        continue-on-error: true
         run: tflint --chdir="${{ matrix.path }}" --config="${{ github.workspace }}/.tflint.hcl"
 
   trivy:
@@ -111,11 +109,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Não-bloqueante por enquanto (exit-code 0): achados pré-existentes
-      # (ex.: NSG do app tier com source "*", listener HTTP sem HTTPS no ALB)
-      # ainda não foram triados/suprimidos em trivy.yaml. Trocar para
-      # exit-code 1 depois da triagem, quando este job virar required
-      # status check.
+      # Bloqueante: achados pré-existentes (NSG do app tier com source "*",
+      # listener HTTP sem HTTPS no ALB) já foram triados e formalmente
+      # suprimidos via .trivyignore. Ver docs/BACKLOG.md.
       - name: trivy config scan
         uses: aquasecurity/trivy-action@v0.36.0
         with:
@@ -123,7 +119,7 @@ jobs:
           config: 'trivy.yaml'
           format: 'sarif'
           output: 'trivy-results.sarif'
-          exit-code: '0'
+          exit-code: '1'
 
       - name: upload SARIF to GitHub Security tab
         if: always()
