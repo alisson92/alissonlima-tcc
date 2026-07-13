@@ -61,9 +61,9 @@ No modules.
 | ---- | ----------- |
 | <a name="output_appgw_subnet_id"></a> [appgw\_subnet\_id](#output\_appgw\_subnet\_id) | ID da subnet dedicada ao Application Gateway (não pode ter outro recurso associado). |
 | <a name="output_azure_nameservers"></a> [azure\_nameservers](#output\_azure\_nameservers) | Nameservers para cadastrar no Registro.br |
-| <a name="output_private_dns_zone_name"></a> [private\_dns\_zone\_name](#output\_private\_dns\_zone\_name) | n/a |
-| <a name="output_private_subnet_ids"></a> [private\_subnet\_ids](#output\_private\_subnet\_ids) | n/a |
-| <a name="output_public_dns_zone_name"></a> [public\_dns\_zone\_name](#output\_public\_dns\_zone\_name) | ESSENCIAIS PARA O DNS QUE CRIAMOS |
-| <a name="output_public_subnet_ids"></a> [public\_subnet\_ids](#output\_public\_subnet\_ids) | n/a |
-| <a name="output_vnet_id"></a> [vnet\_id](#output\_vnet\_id) | n/a |
+| <a name="output_private_dns_zone_name"></a> [private\_dns\_zone\_name](#output\_private\_dns\_zone\_name) | Nome da zona DNS privada (Private DNS Zone), associada à VNet. |
+| <a name="output_private_subnet_ids"></a> [private\_subnet\_ids](#output\_private\_subnet\_ids) | Lista de IDs das sub-redes privadas. |
+| <a name="output_public_dns_zone_name"></a> [public\_dns\_zone\_name](#output\_public\_dns\_zone\_name) | Nome da zona DNS pública (Azure DNS) criada para o domínio. |
+| <a name="output_public_subnet_ids"></a> [public\_subnet\_ids](#output\_public\_subnet\_ids) | Lista de IDs das sub-redes públicas. |
+| <a name="output_vnet_id"></a> [vnet\_id](#output\_vnet\_id) | O ID da Virtual Network (VNet) criada. |
 <!-- END_TF_DOCS -->

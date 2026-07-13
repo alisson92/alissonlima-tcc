@@ -1,13 +1,16 @@
 output "vnet_id" {
-  value = azurerm_virtual_network.main.id
+  description = "O ID da Virtual Network (VNet) criada."
+  value       = azurerm_virtual_network.main.id
 }
 
 output "public_subnet_ids" {
-  value = [azurerm_subnet.public_a.id]
+  description = "Lista de IDs das sub-redes públicas."
+  value       = [azurerm_subnet.public_a.id]
 }
 
 output "private_subnet_ids" {
-  value = [azurerm_subnet.private_a.id, azurerm_subnet.private_b.id]
+  description = "Lista de IDs das sub-redes privadas."
+  value       = [azurerm_subnet.private_a.id, azurerm_subnet.private_b.id]
 }
 
 output "appgw_subnet_id" {
@@ -17,11 +20,13 @@ output "appgw_subnet_id" {
 
 # ESSENCIAIS PARA O DNS QUE CRIAMOS
 output "public_dns_zone_name" {
-  value = azurerm_dns_zone.public.name
+  description = "Nome da zona DNS pública (Azure DNS) criada para o domínio."
+  value       = azurerm_dns_zone.public.name
 }
 
 output "private_dns_zone_name" {
-  value = azurerm_private_dns_zone.internal.name
+  description = "Nome da zona DNS privada (Private DNS Zone), associada à VNet."
+  value       = azurerm_private_dns_zone.internal.name
 }
 
 output "azure_nameservers" {
