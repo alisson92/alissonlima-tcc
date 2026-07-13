@@ -40,17 +40,15 @@ No modules.
 
 | Name | Description | Type | Default | Required |
 | ---- | ----------- | ---- | ------- | :------: |
-| <a name="input_admin_username"></a> [admin\_username](#input\_admin\_username) | Usuário administrador das VMs. | `string` | `"adminuser"` | no |
-| <a name="input_app_server_count"></a> [app\_server\_count](#input\_app\_server\_count) | n/a | `number` | `1` | no |
+| <a name="input_app_server_count"></a> [app\_server\_count](#input\_app\_server\_count) | Quantidade de servidores de aplicação a serem criados. | `number` | `1` | no |
 | <a name="input_db_disk_id"></a> [db\_disk\_id](#input\_db\_disk\_id) | ID do Managed Disk para o banco de dados. | `string` | n/a | yes |
-| <a name="input_environment"></a> [environment](#input\_environment) | n/a | `string` | n/a | yes |
-| <a name="input_location"></a> [location](#input\_location) | n/a | `string` | n/a | yes |
-| <a name="input_private_dns_zone_name"></a> [private\_dns\_zone\_name](#input\_private\_dns\_zone\_name) | Nome da zona de DNS privado na Azure. | `string` | n/a | yes |
-| <a name="input_private_subnet_ids"></a> [private\_subnet\_ids](#input\_private\_subnet\_ids) | n/a | `list(string)` | n/a | yes |
+| <a name="input_environment"></a> [environment](#input\_environment) | Nome do ambiente (ex: teste, homol, prod). | `string` | n/a | yes |
+| <a name="input_location"></a> [location](#input\_location) | Região da Azure. | `string` | n/a | yes |
+| <a name="input_private_subnet_ids"></a> [private\_subnet\_ids](#input\_private\_subnet\_ids) | Lista de IDs das sub-redes privadas onde as VMs serão criadas. | `list(string)` | n/a | yes |
 | <a name="input_public_key"></a> [public\_key](#input\_public\_key) | Conteúdo da chave pública SSH. | `string` | n/a | yes |
-| <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name) | n/a | `string` | n/a | yes |
-| <a name="input_tags"></a> [tags](#input\_tags) | n/a | `map(string)` | n/a | yes |
-| <a name="input_vm_size"></a> [vm\_size](#input\_vm\_size) | Tamanho da VM (Ex: Standard\_B1s). | `string` | `"Standard_B1s"` | no |
+| <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name) | Nome do Resource Group. | `string` | n/a | yes |
+| <a name="input_tags"></a> [tags](#input\_tags) | Um mapa de tags para ser aplicado nos recursos. | `map(string)` | n/a | yes |
+| <a name="input_vm_size"></a> [vm\_size](#input\_vm\_size) | Tamanho da VM (Ex: Standard\_B1s\_v2). | `string` | `"Standard_B1s_v2"` | no |
 
 ## Outputs
 
