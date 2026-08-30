@@ -36,3 +36,8 @@ terraform.rc
 # Arquivos de SO
 .DS_Store
 Thumbs.db
+
+# Rascunhos da monografia (redação acadêmica, não é código do projeto).
+# Fica só local: repo é público, ciclo de vida e formato (.doc/.docx) não
+# combinam com versionamento em Git.
+monografia/
